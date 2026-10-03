@@ -8,9 +8,31 @@ export interface StorageConfig {
   isConfigured: boolean
 }
 
+function loadLocalEnv() {
+  try {
+    const envPath = path.join(process.cwd(), '.env.local')
+    if (fs.existsSync(envPath)) {
+      const lines = fs.readFileSync(envPath, 'utf-8').split(/\r?\n/)
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed || trimmed.startsWith('#')) continue
+        const idx = trimmed.indexOf('=')
+        if (idx !== -1) {
+          const key = trimmed.slice(0, idx).trim()
+          const val = trimmed.slice(idx + 1).trim()
+          if (!process.env[key]) {
+            process.env[key] = val
+          }
+        }
+      }
+    }
+  } catch {}
+}
+
 export function getStorageConfig(): StorageConfig {
+  loadLocalEnv()
   const url = process.env.SUPABASE_URL?.trim() || null
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim() || null
+  const key = (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SECRET_KEY)?.trim() || null
   const bucket = process.env.SUPABASE_STORAGE_BUCKET?.trim() || 'falcon-media'
 
   return {
@@ -36,6 +58,38 @@ export function getPublicUrl(storagePath: string): string {
   return `/api/media/${cleanPath}`
 }
 
+let bucketChecked = false
+
+/**
+ * Ensure the public bucket exists in Supabase Storage.
+ */
+export async function ensureBucketExists(): Promise<void> {
+  if (bucketChecked) return
+  const config = getStorageConfig()
+  if (!config.isConfigured || !config.supabaseUrl || !config.serviceRoleKey) return
+
+  try {
+    const res = await fetch(`${config.supabaseUrl}/storage/v1/bucket/${config.bucket}`, {
+      headers: {
+        'Authorization': `Bearer ${config.serviceRoleKey}`,
+        'apikey': config.serviceRoleKey,
+      },
+    })
+    if (!res.ok) {
+      await fetch(`${config.supabaseUrl}/storage/v1/bucket`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${config.serviceRoleKey}`,
+          'apikey': config.serviceRoleKey,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: config.bucket, name: config.bucket, public: true }),
+      })
+    }
+    bucketChecked = true
+  } catch {}
+}
+
 /**
  * Upload an object to Supabase Storage via REST API (plain fetch).
  */
@@ -48,6 +102,7 @@ export async function putObject(
   const cleanPath = storagePath.replace(/^\/+/, '')
 
   if (config.isConfigured && config.supabaseUrl && config.serviceRoleKey) {
+    await ensureBucketExists()
     try {
       const url = `${config.supabaseUrl}/storage/v1/object/${config.bucket}/${cleanPath}`
       const res = await fetch(url, {
@@ -165,6 +220,7 @@ export async function createSignedUploadUrl(
   const publicUrl = getPublicUrl(cleanPath)
 
   if (config.isConfigured && config.supabaseUrl && config.serviceRoleKey) {
+    await ensureBucketExists()
     try {
       const url = `${config.supabaseUrl}/storage/v1/object/upload/sign/${config.bucket}/${cleanPath}`
       const res = await fetch(url, {
@@ -185,7 +241,9 @@ export async function createSignedUploadUrl(
       const data = await res.json()
       // Supabase returns relative or absolute url: e.g. { url: "/storage/v1/..." }
       let signedUrl = data.url || ''
-      if (signedUrl.startsWith('/')) {
+      if (signedUrl.startsWith('/object/')) {
+        signedUrl = `${config.supabaseUrl}/storage/v1${signedUrl}`
+      } else if (signedUrl.startsWith('/')) {
         signedUrl = `${config.supabaseUrl}${signedUrl}`
       }
 

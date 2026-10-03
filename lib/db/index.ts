@@ -20,8 +20,30 @@ export interface DatabaseClient {
 let globalClient: Client | null = null
 let migrationsApplied = false
 
+function loadLocalEnv() {
+  try {
+    const envPath = path.join(process.cwd(), '.env.local')
+    if (fs.existsSync(envPath)) {
+      const lines = fs.readFileSync(envPath, 'utf-8').split(/\r?\n/)
+      for (const line of lines) {
+        const trimmed = line.trim()
+        if (!trimmed || trimmed.startsWith('#')) continue
+        const idx = trimmed.indexOf('=')
+        if (idx !== -1) {
+          const key = trimmed.slice(0, idx).trim()
+          const val = trimmed.slice(idx + 1).trim()
+          if (!process.env[key]) {
+            process.env[key] = val
+          }
+        }
+      }
+    }
+  } catch {}
+}
+
 export function getRawLibSqlClient(): Client {
   if (!globalClient) {
+    loadLocalEnv()
     const url = process.env.DATABASE_URL || 'file:local.db'
     const authToken = process.env.DATABASE_AUTH_TOKEN
 

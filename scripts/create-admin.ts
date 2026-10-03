@@ -18,20 +18,39 @@ import readline from 'node:readline'
 import { generateSalt, hashPassword, PBKDF2_ITERATIONS } from '../lib/auth'
 import { getRawLibSqlClient, runMigrations } from '../lib/db'
 
+let persistentRl: readline.Interface | null = null
+const lineQueue: string[] = []
+const waiters: ((line: string) => void)[] = []
+
+function initRl() {
+  if (!persistentRl) {
+    persistentRl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout,
+      terminal: Boolean(process.stdin.isTTY),
+    })
+    persistentRl.on('line', (line) => {
+      const val = line.trim()
+      if (waiters.length > 0) {
+        const resolve = waiters.shift()!
+        resolve(val)
+      } else {
+        lineQueue.push(val)
+      }
+    })
+  }
+}
+
 function ask(question: string, hidden = false): Promise<string> {
   const isTTY = Boolean(process.stdin.isTTY && typeof process.stdin.setRawMode === 'function')
 
   if (!hidden || !isTTY) {
-    const rl = readline.createInterface({
-      input: process.stdin,
-      output: process.stdout,
-    })
-    return new Promise((resolve) => {
-      rl.question(question, (answer) => {
-        rl.close()
-        resolve(answer.trim())
-      })
-    })
+    initRl()
+    process.stdout.write(question)
+    if (lineQueue.length > 0) {
+      return Promise.resolve(lineQueue.shift()!)
+    }
+    return new Promise((resolve) => waiters.push(resolve))
   }
 
   // TTY raw mode: mask characters for hidden password input
@@ -76,11 +95,11 @@ async function main() {
   }
 
   console.log('=== Falcon 3D Prints — Create Admin User ===')
+  const client = getRawLibSqlClient()
   const dbUrl = process.env.DATABASE_URL || 'file:local.db'
   const isRemoteTurso = dbUrl.startsWith('libsql://') || dbUrl.startsWith('https://')
   console.log(`Database Target: ${isRemoteTurso ? dbUrl.replace(/(:\/\/[^@]*@)/, '://***@') : dbUrl}\n`)
 
-  const client = getRawLibSqlClient()
   await runMigrations(client)
 
   const email = await ask('Admin Email: ')
@@ -126,7 +145,10 @@ async function main() {
     console.log(`\n✅ Successfully created / updated admin account: ${email}`)
     console.log(`Account ID: ${userId}`)
     console.log('Credentials stored as salted cryptographic hash. No secrets written to disk.')
+    if (persistentRl) persistentRl.close()
+    process.exit(0)
   } catch (err: any) {
+    if (persistentRl) persistentRl.close()
     console.error('Failed to create admin user:', err.message)
     process.exit(1)
   }
