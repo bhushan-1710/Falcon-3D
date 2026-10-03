@@ -313,6 +313,12 @@ export default async function ProductsPage() {
           top: 72px;
           z-index: 10;
         }
+        @media (max-width: 767px) {
+          .products-filter {
+            top: 56px;
+            padding: var(--space-4) 0;
+          }
+        }
         .products-filter__inner {
           display: flex;
           align-items: center;
@@ -559,6 +565,19 @@ export default async function ProductsPage() {
           min-width: 0;
           max-width: 100%;
           flex-wrap: wrap;
+        }
+        @media (max-width: 480px) {
+          .products-cta-band__actions {
+            width: 100%;
+            flex-direction: column;
+            align-items: stretch;
+            gap: var(--space-3);
+          }
+          .products-cta-band__actions .btn-primary,
+          .products-cta-band__actions .btn-secondary {
+            width: 100%;
+            justify-content: center;
+          }
         }
         .products-cta-band .btn-secondary {
           color: var(--paper);

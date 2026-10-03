@@ -314,6 +314,9 @@ export default async function ProductDetailPage(
             gap: var(--space-8);
             padding: var(--space-8) 0 var(--space-24);
           }
+          .pd-gallery {
+            position: static;
+          }
         }
 
         /* ── Gallery ── */
@@ -450,6 +453,25 @@ export default async function ProductDetailPage(
         .pd-actions__contact {
           font-size: 0.8125rem;
           letter-spacing: 0.06em;
+        }
+        @media (max-width: 480px) {
+          .pd-specs {
+            grid-template-columns: 1fr;
+            gap: var(--space-1) 0;
+          }
+          .pd-specs dt {
+            margin-top: var(--space-2);
+          }
+          .pd-actions {
+            flex-direction: column;
+            align-items: stretch;
+            gap: var(--space-3);
+          }
+          .pd-actions .btn-primary,
+          .pd-actions .btn-secondary {
+            width: 100%;
+            justify-content: center;
+          }
         }
         .pd-enquiry-note {
           font-family: var(--font-dm-mono, 'DM Mono', monospace);

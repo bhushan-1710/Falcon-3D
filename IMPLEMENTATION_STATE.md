@@ -4,6 +4,26 @@
 
 ---
 
+## Multi-Device & Responsive Optimization (2026-10-03) ✅
+
+### 1. Scope & Implementation
+- **Full Viewport Suite Verification**:
+  - Chrome CDP audit across 9 viewports: 320px, 375px, 390px, 414px, 768px, 1024px, 1280px, 1440px, and 1920px.
+  - Zero horizontal overflow across all tested routes (`scrollWidth === clientWidth`, 0px overflow).
+- **Narrow Device (≤ 360px) Adaptations**:
+  - Micro-viewport clamp for display heroes (`clamp(2.125rem, 9.5vw, 2.75rem)`).
+  - Scaled mobile sticky CTA bar for compact screens.
+- **Hardware Safe-Area Inset Handling**:
+  - `env(safe-area-inset-*)` incorporated into `.container`, `.admin-mobile-header`, and `.mobile-sticky-bar`.
+- **Touch Responsiveness**:
+  - `touch-action: manipulation` and `-webkit-tap-highlight-color: transparent` across all interactive elements.
+- **Catalog & Detail Ergonomics**:
+  - Mobile sticky offset alignment (`top: 56px`).
+  - Stacking layouts below 480px for CTA action bands and specification tables.
+  - Non-sticky mobile gallery (`.pd-gallery: static` below 768px) preventing text occlusion on short mobile screens.
+
+---
+
 ## Phase 7 — QA, Security Verification, Documentation, and Deploy Preparation (2026-10-03) ✅
 
 ### 1. Scope & Implementation

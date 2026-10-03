@@ -2,6 +2,27 @@
 
 > **File location**: repo root (`falcon-web/CHANGELOG.md`), not `docs/`.
 
+## [Multi-Device & Responsive Optimization] — 2026-10-03
+
+### Added & Configured
+- **Comprehensive Viewport Audit via Real Chrome CDP**:
+  - Validated 0 horizontal overflow across 9 standard viewports: 320px (Small Mobile), 375px (Standard Mobile), 390px (Modern Mobile), 414px (Large Mobile), 768px (Tablet Portrait), 1024px (Small Desktop/Landscape Tablet), 1280px (Desktop), 1440px (Wide Desktop), and 1920px (Full HD).
+  - All 18 automated responsive test passes achieved `scrollWidth === clientWidth` and 0px overflow.
+- **Ultra-Small Screen (≤ 360px) Adaptations (`app/globals.css`)**:
+  - Added micro-viewport typography scaling for `--text-display-hero` (clamp 2.125rem–2.75rem) and `--text-display-section`.
+  - Scaled mobile sticky bar padding and button heights (44px) so CTA buttons and WhatsApp icons remain fully accessible and unclipped on narrow devices (e.g. Galaxy Z Fold outer screen, iPhone SE 1st gen).
+- **Safe-Area Inset Support**:
+  - Implemented `env(safe-area-inset-left)` and `env(safe-area-inset-right)` on `.container` to prevent bezel collisions on notched and curved OLED mobile displays.
+  - Implemented `env(safe-area-inset-top)` on `.admin-mobile-header` and `.admin-sidebar` to seamlessly clear device status bars and camera cutouts.
+- **Touch Ergonomics**:
+  - Added `-webkit-tap-highlight-color: transparent` and `touch-action: manipulation` across all buttons, links, inputs, and selects to remove mobile tap lag and default tap overlays.
+- **Product Catalog & Detail Ergonomics**:
+  - Configured `.products-filter` top offset to match dynamic mobile header height (`56px`).
+  - Added full-width stacked button layouts on screens below 480px for CTA action bands.
+  - Removed sticky positioning on mobile product detail gallery (`.pd-gallery: static`) below 768px, ensuring product descriptions and specs never get hidden on short screen heights.
+  - Added single-column layout for product specification definition lists (`.pd-specs`) below 480px.
+
+
 ## [Phase 7 — QA, Security Verification, Documentation, and Deploy Preparation] — 2026-10-03
 
 ### Added & Configured

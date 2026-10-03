@@ -208,17 +208,21 @@ export function AdminShell({ userEmail, children }: AdminShellProps) {
         @media (max-width: 768px) {
           .admin-sidebar {
             transform: translateX(-100%);
-            top: 56px !important;
+            top: calc(56px + env(safe-area-inset-top, 0px)) !important;
           }
           .admin-sidebar.open {
             transform: translateX(0);
           }
           .admin-main {
             margin-left: 0 !important;
-            padding: 72px 16px 24px 16px !important;
+            padding: calc(72px + env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right)) 24px max(16px, env(safe-area-inset-left)) !important;
           }
           .admin-mobile-header {
             display: flex !important;
+            height: calc(56px + env(safe-area-inset-top, 0px)) !important;
+            padding-top: env(safe-area-inset-top, 0px) !important;
+            padding-left: max(16px, env(safe-area-inset-left)) !important;
+            padding-right: max(16px, env(safe-area-inset-right)) !important;
           }
         }
         @media (min-width: 769px) {
