@@ -1,5 +1,59 @@
 # Falcon 3D Prints — Implementation State
 
+> **File location**: repo root (`falcon-web/IMPLEMENTATION_STATE.md`), not `docs/`.
+
+---
+
+## Phase 2b — Fix-up Pass (2026-10-03) ✅
+
+### 1. Fixture Bundle Gate (verified clean)
+- `lib/data/products.ts` gates all fixture data behind `NODE_ENV === 'development' && USE_PRODUCT_FIXTURES === '1'`.
+- Production build (no opt-in) confirmed: `getPublishedProducts()` and `getPublishedProductBySlug()` both return `[]` / `null`.
+- Bundle search (`.next/server`, `.next/static`) for fixture-only strings (`SAMPLE PRODUCT`, `engineered-equipment-enclosure`, `articulated-robotic-gripper-kit`, `SAMPLE DRAFT`): **zero hits**.
+- Note: `parametric-spiral-luminary` found in bundle originates from `lib/projects.ts` (Workshop Wall scene data, unrelated to product fixtures).
+
+### 2. Production 404 Behaviour (no `dynamicParams = false`)
+- `dynamicParams` left at default (`true`) intentionally — Phase 3 CMS products must render on-demand without redeploy.
+- Production server tested via `next start` without `USE_PRODUCT_FIXTURES`.
+- `/products/engineered-equipment-enclosure` (fixture slug): **HTTP 404** ✅
+- `/products/totally-random-slug` (unknown slug): **HTTP 404** ✅
+- `/products` (listing): **HTTP 200** ✅ (shows designed empty state)
+- Mechanism: `getPublishedProductBySlug()` returns `null` → `notFound()` is called → Next.js emits 404.
+
+### 3. SITE_URL & metadataBase
+- `seo.canonicalUrl` in `lib/content.ts` is `'[CONFIRM: final production URL]'` — a placeholder string, **never used** in metadata.
+- `app/layout.tsx` uses `process.env.SITE_URL ? new URL(process.env.SITE_URL) : undefined` for `metadataBase`. No code change required.
+- `lib/data/products.ts` `buildProductWhatsAppUrl()` omits the `"Page: <url>"` line when `SITE_URL` is not configured.
+- **Required env vars**:
+  - `SITE_URL=https://<production-domain>` — enables `metadataBase` and WhatsApp page link. Omit in local dev.
+  - `USE_PRODUCT_FIXTURES=1` — local dev only, never set in production.
+
+### 4. Browser Verification
+- **Browser tool failed**: Playwright driver download returned HTTP 404 from all Azure CDN mirrors (`playwright-1.57.0-win32_x64.zip`). Screenshots could not be taken.
+- **Manual checklist** (to be completed by user before Phase 2b approval):
+  - [ ] Home `/` at 1440px: warm paper/cream bg, black ink, orange accents, editorial type, no console errors.
+  - [ ] Home `/` at 375px: no layout overflow, all scenes render correctly.
+  - [ ] Nav order at 1440px: SERVICES · WORK · PRODUCTS · PROCESS · ABOUT · CONTACT + CTA button.
+  - [ ] SERVICES click on `/` → smooth-scrolls to `#lab`.
+  - [ ] CTA button → smooth-scrolls to `#contact`.
+  - [ ] `/products` (no fixture): shows empty state, PRODUCTS link is active/orange.
+  - [ ] SERVICES from `/products` → navigates to `/#lab`.
+  - [ ] Logo from `/products` → returns to `/`.
+  - [ ] `USE_PRODUCT_FIXTURES=1` dev: `/products/engineered-equipment-enclosure` shows `[SAMPLE PRODUCT]` title, specs, ENQUIRE button.
+  - [ ] ENQUIRE WhatsApp URL starts with `https://wa.me/919850607144`.
+  - [ ] `/products/unreleased-internal-bracket` (DRAFT) → 404.
+  - [ ] `/products/totally-made-up-slug` → 404.
+
+### 5. Production Route Table
+```
+○ /                   — Static (home)
+○ /_not-found         — Static
+○ /products           — Static (empty state when no D1/fixtures)
+● /products/[slug]    — SSG (0 params in production; on-demand ISR for Phase 3)
+```
+
+---
+
 ## Status: COMPLETE & SURGICAL 2-ARTIFACT REPLACEMENT VERIFIED ✅
 
 The Falcon 3D Prints web application has completed the Surgical 2-Artifact Replacement Pass. Exactly TWO visual artifacts were replaced:

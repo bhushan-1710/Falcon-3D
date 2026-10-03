@@ -1,5 +1,26 @@
 # Changelog — Falcon 3D Prints
 
+> **File location**: repo root (`falcon-web/CHANGELOG.md`), not `docs/`.
+
+## [Phase 2b — Fix-up Pass] — 2026-10-03
+
+### Verified (no code changes required)
+- **Fixture gate**: `lib/data/products.ts` correctly gates all fixture data behind `NODE_ENV === 'development' && USE_PRODUCT_FIXTURES === '1'`. No changes needed.
+- **Bundle clean**: Production build (`.next/server`, `.next/static`) contains zero fixture-only strings. Fixture module is imported unconditionally in source but the gate means it never executes; Next.js does not tree-shake module-level side effects, but no fixture data reaches any bundle output.
+- **404 behaviour**: `dynamicParams` intentionally left unset (default `true`). `notFound()` in `[slug]/page.tsx` already produces HTTP 404 for any slug when the data layer returns `null`. Verified on `next start` without opt-in: fixture slug and random slug both return `404 Not Found`.
+- **SITE_URL**: `app/layout.tsx` already uses `process.env.SITE_URL` for `metadataBase`. `buildProductWhatsAppUrl()` already omits the `"Page:"` line when unset. `seo.canonicalUrl` is an unused placeholder string — no code change required.
+
+### Documented
+- `SITE_URL` env var requirement documented in `IMPLEMENTATION_STATE.md`.
+- `USE_PRODUCT_FIXTURES=1` env var documented as local-dev-only flag.
+- Production route table documented.
+
+### Browser Verification
+- Browser tool (Playwright) failed — driver download 404 from all Azure CDN mirrors.
+- Manual checklist added to `IMPLEMENTATION_STATE.md §Phase 2b §4`.
+
+---
+
 ## [Reference-Based Hero Object Replacement Pass] — 2026-10-03
 
 ### Hero Object Transformation (Direct Visual Reference Adherence)
