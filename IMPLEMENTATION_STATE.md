@@ -4,6 +4,56 @@
 
 ---
 
+## Phase 4 — Auth + Admin Shell (2026-10-03) ✅
+
+### 1. Scope & Implementation
+- **WebCrypto PBKDF2 Engine (`lib/auth/index.ts`)**:
+  - Salt generation: 32-byte cryptographic random salt per user.
+  - Hashing: WebCrypto PBKDF2 with SHA-512, 100,000 iterations.
+  - Constant-time verification preventing timing attacks.
+  - Zero plain passwords stored in repository or environment.
+- **Session Management**:
+  - Secure random 32-byte session token generated on login.
+  - Stores only SHA-256 token hash in D1 `sessions` with 7-day expiration (`expires_at`).
+  - Active session rotation on new login; session cleanup on logout.
+- **Cookie Security & CSRF (`lib/auth/guard.ts`)**:
+  - Cookie name: `__Host-session` in production HTTPS, `session` on HTTP localhost (browsers reject `__Host-` on non-HTTPS).
+  - Attributes: `httpOnly: true`, `sameSite: 'strict'`, `path: '/'`, `maxAge: 7 days`.
+  - CSRF protection: Origin header comparison against host on mutating HTTP requests (`POST`, `PUT`, `DELETE`, `PATCH`).
+- **Rate Limiting**:
+  - Enforced via D1 `login_attempts` table.
+  - Limits to 5 failed attempts per 15-minute rolling window per email hash.
+  - Generic 401 error message ("Invalid email or password") preventing username enumeration.
+- **Admin Creation Tool (`scripts/create-admin.ts`)**:
+  - CLI script prompting interactively for email and password.
+  - Inserts directly into D1 with salt and hash.
+- **Route Protection**:
+  - All admin endpoints (`/api/admin/media/upload`, `/api/admin/media/[id]/usage`, `/api/admin/videos`, `/api/admin/videos/upload`, `/api/auth/me`) call `verifyAdminRequest(request)`.
+  - Server-side guard in `app/admin/layout.tsx` and `app/admin/page.tsx`.
+- **CMS Shell UI**:
+  - `app/admin/layout.tsx`: Injects `<meta name="robots" content="noindex, nofollow" />`.
+  - `components/admin/AdminShell.tsx`: Practical CMS sidebar (Dashboard, Projects, Products, Media, Videos, Website Content, Navigation, Categories, Settings) with mobile drawer and user sign-out action.
+  - `app/admin/page.tsx`: Real data dashboard showing D1 counts (Products, Projects, Media, Videos), recent activity feed, and quick actions.
+  - `app/admin/login/page.tsx`: High-contrast, clean studio authentication interface.
+
+### 2. Verification
+- **Automated API & End-to-End Suite (`verify_4.js`)**:
+  - Unauthenticated access: All 5 admin and auth endpoints returned HTTP 401.
+  - Login failure: Returned HTTP 401 with generic error message.
+  - Login success: Returned HTTP 200 with Set-Cookie header.
+  - Session authorization: `/api/auth/me` with cookie returned user ID and email with HTTP 200.
+  - Real Chrome CDP Desktop (1280px): Verified layout, sidebar, heading, live D1 metric cards.
+  - Real Chrome CDP Mobile (375px): Verified zero overflow (`scrollWidth: 375px`, `overflow: 0px`), responsive header, and drawer toggle button.
+  - Real Chrome CDP Login (375px): Verified zero overflow (`scrollWidth: 375px`, `overflow: 0px`), form accessibility.
+  - Logout verification: `/api/auth/logout` invalidated session; subsequent `/api/auth/me` returned HTTP 401.
+- **Build Checks**:
+  - `next build`: Passed cleanly with exit code 0.
+
+### 3. Next Phase
+- **Phase 5**: CMS Screens (CRUD for Projects, Products, Categories, Media Library picker, Website Content editor, and Navigation manager).
+
+---
+
 ## Phase 3C — R2 + Media Layer (2026-10-03) ✅
 
 ### 1. Scope & Implementation

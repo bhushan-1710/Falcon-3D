@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDB } from '@/lib/cloudflare/context'
+import { verifyAdminRequest } from '@/lib/auth/guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -7,8 +8,13 @@ function generateId(): string {
   return 'vid_' + crypto.randomUUID().replace(/-/g, '').slice(0, 16)
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
+    const authCheck = await verifyAdminRequest(request)
+    if (!authCheck.success) {
+      return authCheck.response
+    }
+
     const db = await getDB()
     if (!db) {
       return NextResponse.json({ error: 'Database unavailable' }, { status: 503 })
@@ -35,6 +41,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const authCheck = await verifyAdminRequest(request)
+    if (!authCheck.success) {
+      return authCheck.response
+    }
     const body = await request.json()
     const { title, description, external_url, duration_secs, thumbnail_id } = body
 

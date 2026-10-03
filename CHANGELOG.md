@@ -2,6 +2,34 @@
 
 > **File location**: repo root (`falcon-web/CHANGELOG.md`), not `docs/`.
 
+## [Phase 4 — Auth + Admin Shell] — 2026-10-03
+
+### Added & Configured
+- `lib/auth/index.ts`: Native WebCrypto PBKDF2 password hashing (SHA-512, 100,000 iterations, 32-byte cryptographic salt), session token generator with SHA-256 token hashing in D1 `sessions`, login rate limiting (5 attempts per 15-minute window via `login_attempts`), and activity logging.
+- `lib/auth/guard.ts`: Server-side authorization guard with CSRF Origin validation on mutating requests, secure cookie helper (`__Host-` prefix on production HTTPS, `session` on HTTP localhost, `httpOnly: true`, `sameSite: 'strict'`, `path: '/'`).
+- Route handlers:
+  - `app/api/auth/login/route.ts`: Login endpoint with generic 401 response and session cookie issuance.
+  - `app/api/auth/logout/route.ts`: Logout endpoint deleting session from D1 and clearing cookie.
+  - `app/api/auth/me/route.ts`: Returns current user session state.
+- Route protection: Updated all admin mutation endpoints (`/api/admin/media/upload`, `/api/admin/media/[id]/usage`, `/api/admin/videos`, `/api/admin/videos/upload`) to strictly enforce `verifyAdminRequest(request)`.
+- CLI Tool: `scripts/create-admin.ts` allowing interactive, secure admin creation directly in D1 with concealed password input, zero hardcoded passwords or secrets in repo or env files.
+- Admin UI Shell:
+  - `app/admin/layout.tsx`: Server-side auth check with `<meta name="robots" content="noindex, nofollow" />`.
+  - `app/admin/login/page.tsx`: Clean, high-contrast, accessible login interface.
+  - `components/admin/AdminShell.tsx`: Practical CMS sidebar navigation (Dashboard, Projects, Products, Media, Videos, Website Content, Navigation, Categories, Settings) and mobile-responsive drawer.
+  - `app/admin/page.tsx`: Real-data dashboard displaying live D1 project, product, media, and video counts, recent activity from `activity_log`, and quick actions.
+
+### Verified (Real Chrome CDP + Automated API Suite)
+- Route protection: All 5 admin and auth endpoints strictly reject unauthenticated requests with HTTP 401.
+- Authentication flow: Login with invalid password returns 401; login with valid password returns HTTP 200 with Set-Cookie.
+- Session authorization: Authenticated request to `/api/auth/me` with cookie returns HTTP 200 with user data.
+- Chrome CDP Desktop (1280px): Dashboard renders cleanly with title, heading, sidebar, and live D1 metric cards.
+- Chrome CDP Mobile (375px): Zero horizontal overflow (`scrollWidth: 375px`, `overflow: 0px`), responsive top bar and drawer navigation toggle.
+- Chrome CDP Login Page (375px): Zero horizontal overflow (`scrollWidth: 375px`, `overflow: 0px`), form and input elements fully accessible.
+- Logout flow: `/api/auth/logout` deletes session and clears cookie; subsequent `/api/auth/me` returns 401.
+- Build checks: `npm run build` passes cleanly with exit code 0.
+
+
 ## [Phase 3C — R2 + Media Layer] — 2026-10-03
 
 ### Added & Configured

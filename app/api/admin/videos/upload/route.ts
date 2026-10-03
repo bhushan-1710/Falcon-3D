@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDB, getMediaBucket } from '@/lib/cloudflare/context'
+import { verifyAdminRequest } from '@/lib/auth/guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,6 +19,11 @@ function sanitizeFilename(name: string): string {
  */
 export async function POST(request: NextRequest) {
   try {
+    const authCheck = await verifyAdminRequest(request)
+    if (!authCheck.success) {
+      return authCheck.response
+    }
+
     const contentType = request.headers.get('content-type') || ''
     const bucket = await getMediaBucket()
     const db = await getDB()

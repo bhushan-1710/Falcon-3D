@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDB, getMediaBucket } from '@/lib/cloudflare/context'
 import { validateImageUpload } from '@/lib/media/validation'
+import { verifyAdminRequest } from '@/lib/auth/guard'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,6 +15,11 @@ function sanitizeFilename(name: string): string {
 
 export async function POST(request: NextRequest) {
   try {
+    const authCheck = await verifyAdminRequest(request)
+    if (!authCheck.success) {
+      return authCheck.response
+    }
+
     const formData = await request.formData()
     const file = formData.get('file') as File | null
     const altText = formData.get('alt_text') as string | null
