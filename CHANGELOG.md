@@ -2,6 +2,24 @@
 
 > **File location**: repo root (`falcon-web/CHANGELOG.md`), not `docs/`.
 
+## [Phase 3A — Cloudflare Setup Smoke Test] — 2026-10-03
+
+### Added
+- `@opennextjs/cloudflare` (^1.20.8) and `wrangler` (^4.147.0) as dev dependencies.
+- `wrangler.jsonc`: Baseline Cloudflare Workers configuration with zero bindings (D1 and R2 deferred to Phase 3B), `compatibility_date: "2026-09-23"`, and static assets directed to `.open-next/assets`.
+- `open-next.config.ts`: Baseline OpenNext configuration using `defineCloudflareConfig()`.
+- NPM scripts: `build:worker`, `preview`, `deploy` in `package.json`.
+- Ignore rules for `/.open-next/` and `/.wrangler/` in `.gitignore`.
+
+### Verified
+- Cloudflare worker build (`npx opennextjs-cloudflare build`) passed cleanly on Windows/OneDrive with exit code 0.
+- Cloudflare preview server (`npx opennextjs-cloudflare preview`) served at `http://127.0.0.1:8787`:
+  - `GET /` → HTTP 200 OK (`x-opennext: 1`)
+  - `GET /products` → HTTP 200 OK (`x-opennext: 1`)
+  - `GET /products/sample-test` → HTTP 404 Not Found (`x-opennext: 1`)
+
+---
+
 ## [Phase 2b — Fix-up Pass] — 2026-10-03
 
 ### Verified (no code changes required)

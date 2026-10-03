@@ -4,6 +4,46 @@
 
 ---
 
+## Phase 3A — Cloudflare Setup Smoke Test (2026-10-03) ✅
+
+### 1. Scope & Dependencies
+- Dev dependencies installed: `@opennextjs/cloudflare` (^1.20.8), `wrangler` (^4.147.0).
+- Config files created:
+  - `wrangler.jsonc`: Clean worker config with **NO bindings** (D1 and R2 deferred to Phase 3B), `compatibility_date: "2026-09-23"`, flags `["nodejs_compat", "global_fetch_strictly_public"]`, and assets mapped to `.open-next/assets`.
+  - `open-next.config.ts`: Baseline `defineCloudflareConfig()` without cache overrides.
+- Updated `package.json` with scripts: `build:worker`, `preview`, `deploy`.
+- Updated `.gitignore` with `/.open-next/` and `/.wrangler/`.
+
+### 2. Next 16 Middleware / Proxy Research
+- Next 16 transitions from `middleware.ts` toward `proxy.ts`, which defaults to running on Node.js runtime.
+- `@opennextjs/cloudflare` has known limitations / runtime mismatches with Node.js proxy/middleware features on Workers.
+- Architecture rule reaffirmed: Middleware/proxy must only ever be a convenience layer (e.g. lightweight URL redirects or UX headers), **never the primary or only security/admin authorization gate**. All admin endpoints in Phase 3+ must authenticate inside server actions and route handlers directly.
+
+### 3. Build & Preview Results
+- Build command `npx opennextjs-cloudflare build` executed and succeeded with exit code 0.
+- Output generated: Worker bundle at `.open-next/worker.js` and assets in `.open-next/assets`.
+- Windows / OneDrive note: OpenNext issued standard advice recommending WSL for Windows production builds, but local build and packaging passed without flaky behavior.
+- Local preview tested via `npx opennextjs-cloudflare preview` on `http://127.0.0.1:8787`:
+  - `GET /` → HTTP 200 OK (`x-opennext: 1`, `Content-Length: 124961`)
+  - `GET /products` → HTTP 200 OK (`x-opennext: 1`, `Content-Length: 45936`)
+  - `GET /products/sample-test` → HTTP 404 Not Found (`x-opennext: 1`, `Content-Length: 9509`)
+
+### 4. Browser Verification
+- Playwright subagent driver download blocked by network (Azure CDN 404).
+- Manual verification checklist for `http://127.0.0.1:8787`:
+  - [ ] Home `/`: 3D hero canvas, scenes, navigation, and console clean.
+  - [ ] Products `/products`: Hero, empty catalog state, CTA band, footer.
+  - [ ] Non-existent slug `/products/sample-product`: 404 page renders.
+
+### 5. Caching & 404 Analysis for Phase 3B
+- **Current rendering**: `/products` is static (`○`); `/products/[slug]` uses `generateStaticParams()` (`●`) with dynamic fallback (`dynamicParams = true`).
+- **404 caching risk**: If a user or crawler visits `/products/new-slug` before publication, Cloudflare CDN / edge caches could store the negative 404 response according to edge cache rules, causing the page to return 404 even after the CMS publishes the product.
+- **Proposed fix for Phase 3B**:
+  1. For dynamic CMS-driven freshness: use `export const dynamic = 'force-dynamic'` (or `revalidate = 0`) on `/products` and `/products/[slug]` so queries go directly to D1 on every request.
+  2. Or, if edge caching is desired: trigger `revalidatePath('/products')` and `revalidatePath('/products/[slug]')` upon publishing via CMS server actions, configured with OpenNext's D1/KV tag cache.
+
+---
+
 ## Phase 2b — Fix-up Pass (2026-10-03) ✅
 
 ### 1. Fixture Bundle Gate (verified clean)
