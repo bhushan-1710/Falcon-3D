@@ -40,13 +40,25 @@ export const brand = {
 // ─── Navigation ───────────────────────────────────────────────────────────────
 export const nav = {
   links: [
-    { label: 'WORK', href: '#wall' }, // DRAFT
-    { label: 'SERVICES', href: '#lab' }, // DRAFT
-    { label: 'PROCESS', href: '#process' }, // DRAFT
-    { label: 'ABOUT', href: '#about' }, // DRAFT
-    { label: 'CONTACT', href: '#contact' }, // DRAFT
+    { label: 'SERVICES', href: '#lab' },
+    { label: 'WORK', href: '#wall' },
+    { label: 'PRODUCTS', href: '/products' },
+    { label: 'PROCESS', href: '#process' },
+    { label: 'ABOUT', href: '#about' },
+    { label: 'CONTACT', href: '#contact' },
   ],
   cta: 'START A CUSTOM PRINT', // DRAFT / PRIMARY CTA
+} as const
+
+// ─── Products Page (Public) ──────────────────────────────────────────────────
+export const productsPage = {
+  heroEyebrow: '05 / FABRICATION CATALOG',
+  heroHeadline: 'Objects made to exist.',
+  heroSubline: 'Engineered housings, parametric geometries, and precision demonstrators manufactured by Falcon in Nashik.',
+  ctaEnquire: 'ENQUIRE ABOUT A PRODUCT',
+  ctaCustom: 'REQUEST A CUSTOM PRINT',
+  emptyTitle: '00 / NO PRODUCTS CURRENTLY RELEASED',
+  emptyText: 'Studio production runs and limited editions are prepared in batches. Inquire for custom fabrication.',
 } as const
 
 // ─── Hero (Scene A) ───────────────────────────────────────────────────────────

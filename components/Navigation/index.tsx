@@ -15,21 +15,26 @@ import { useState, useEffect, useRef, useCallback } from 'react'
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from 'framer-motion'
 import Link from 'next/link'
 import Image from 'next/image'
+import { usePathname, useRouter } from 'next/navigation'
 import { nav, brand } from '@/lib/content'
 
 interface NavProps {
   /** Currently active scene ID */
   activeScene?: string
+  /** Currently active route */
+  activeRoute?: string
 }
 
 const SCENES = ['hero', 'lab', 'wall', 'transform', 'process', 'about', 'samples', 'contact']
 
-export function Navigation({ activeScene = 'hero' }: NavProps) {
+export function Navigation({ activeScene = 'hero', activeRoute }: NavProps) {
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
   const closeButtonRef = useRef<HTMLButtonElement>(null)
   const openButtonRef = useRef<HTMLButtonElement>(null)
+  const pathname = usePathname()
+  const router = useRouter()
 
   const { scrollYProgress } = useScroll()
 
@@ -61,15 +66,35 @@ export function Navigation({ activeScene = 'hero' }: NavProps) {
     return () => { document.body.style.overflow = '' }
   }, [menuOpen])
 
-  const handleNavClick = useCallback((href: string) => {
+  const handleNavClick = useCallback((href: string, e?: React.MouseEvent) => {
     setMenuOpen(false)
-    // Smooth scroll to anchor (Lenis handles this on desktop)
-    const id = href.replace('#', '')
-    const el = document.getElementById(id)
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    if (href.startsWith('#')) {
+      if (pathname === '/') {
+        e?.preventDefault()
+        const id = href.replace('#', '')
+        const el = document.getElementById(id)
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }
+      }
+      // If pathname !== '/', allow native navigation to /#anchor
+    } else {
+      e?.preventDefault()
+      router.push(href)
     }
-  }, [])
+  }, [pathname, router])
+
+  const handleCtaClick = useCallback(() => {
+    setMenuOpen(false)
+    if (pathname === '/') {
+      const el = document.getElementById('contact')
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    } else {
+      router.push('/#contact')
+    }
+  }, [pathname, router])
 
   return (
     <>
@@ -133,14 +158,23 @@ export function Navigation({ activeScene = 'hero' }: NavProps) {
             className="desktop-nav"
           >
             {nav.links.map((link) => {
-              const sceneId = link.href.replace('#', '')
-              const isActive = activeScene === sceneId
+              // Route links: active when pathname matches
+              // Anchor links: active when scene is visible
+              const isRoute = link.href.startsWith('/')
+              const isActive = isRoute
+                ? pathname.startsWith(link.href)
+                : activeScene === link.href.replace('#', '')
+              const resolvedHref = isRoute
+                ? link.href
+                : pathname === '/'
+                  ? link.href
+                  : '/' + link.href
               return (
                 <NavLink
                   key={link.href}
-                  href={link.href}
+                  href={resolvedHref}
                   active={isActive}
-                  onClick={() => handleNavClick(link.href)}
+                  onClick={(e) => handleNavClick(link.href, e)}
                 >
                   {link.label}
                 </NavLink>
@@ -151,9 +185,9 @@ export function Navigation({ activeScene = 'hero' }: NavProps) {
           {/* Desktop CTA */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <a
-              href="#contact"
+              href="/#contact"
               className="btn-primary desktop-cta"
-              onClick={(e) => { e.preventDefault(); handleNavClick('#contact') }}
+              onClick={(e) => { e.preventDefault(); handleCtaClick() }}
               style={{ fontSize: '0.75rem', height: 40, padding: '0 20px' }}
             >
               {nav.cta}
@@ -235,23 +269,31 @@ export function Navigation({ activeScene = 'hero' }: NavProps) {
 
             {/* Nav items */}
             <nav aria-label="Mobile navigation">
-              {nav.links.map((link, i) => (
-                <motion.div
-                  key={link.href}
-                  initial={{ opacity: 0, y: 40 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 20 }}
-                  transition={{ duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
-                >
-                  <a
-                    href={link.href}
-                    className="mobile-menu-item"
-                    onClick={(e) => { e.preventDefault(); handleNavClick(link.href) }}
+              {nav.links.map((link, i) => {
+                const isRoute = link.href.startsWith('/')
+                const resolvedHref = isRoute
+                  ? link.href
+                  : pathname === '/'
+                    ? link.href
+                    : '/' + link.href
+                return (
+                  <motion.div
+                    key={link.href}
+                    initial={{ opacity: 0, y: 40 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 20 }}
+                    transition={{ duration: 0.5, delay: i * 0.06, ease: [0.22, 1, 0.36, 1] }}
                   >
-                    {link.label}
-                  </a>
-                </motion.div>
-              ))}
+                    <a
+                      href={resolvedHref}
+                      className="mobile-menu-item"
+                      onClick={(e) => handleNavClick(link.href, e)}
+                    >
+                      {link.label}
+                    </a>
+                  </motion.div>
+                )
+              })}
             </nav>
 
             {/* Contact info at bottom */}
@@ -262,9 +304,9 @@ export function Navigation({ activeScene = 'hero' }: NavProps) {
               style={{ marginTop: 64 }}
             >
               <a
-                href="#contact"
+                href="/#contact"
                 className="btn-primary"
-                onClick={(e) => { e.preventDefault(); handleNavClick('#contact') }}
+                onClick={(e) => { if (pathname === '/') { e.preventDefault(); handleCtaClick() } }}
                 style={{ width: '100%', justifyContent: 'center' }}
               >
                 {nav.cta}
@@ -296,7 +338,7 @@ interface NavLinkProps {
   href: string
   active?: boolean
   children: React.ReactNode
-  onClick?: () => void
+  onClick?: (e: React.MouseEvent) => void
 }
 
 function NavLink({ href, active, children, onClick }: NavLinkProps) {
@@ -305,7 +347,8 @@ function NavLink({ href, active, children, onClick }: NavLinkProps) {
   return (
     <a
       href={href}
-      onClick={(e) => { e.preventDefault(); onClick?.() }}
+      className={active ? 'nav-link--active' : undefined}
+      onClick={(e) => onClick?.(e)}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       style={{
