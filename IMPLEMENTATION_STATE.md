@@ -4,6 +4,23 @@
 
 ---
 
+## Phase 2c — Mobile Header Overflow Fix (2026-10-03) ✅
+
+### Root Cause (CDP measured)
+- `/products` only: `scrollWidth 461px` vs `clientWidth 375px` (+86 px).
+- `.products-cta-band__actions` had `flex-shrink: 0` blocking flex compression inside its 335 px parent. Two buttons (295.9 + 32 gap + 120.8 = 448.7 px) pushed element `right` to 460.6 px → document scroll width 461 px → fixed header reflowed to that width.
+- `.nav-progress` was `width: 0` — not the cause.
+
+### Fix
+- `app/products/page.tsx`: removed `flex-shrink: 0`, added `flex-shrink: 1; min-width: 0; max-width: 100%`.
+- `app/products/[slug]/page.tsx`: already correct, no change.
+- Zero changes to Navigation, globals.css, scenes, or any protected file.
+
+### Verified
+All 8 CDP checks (320/375/390/768 px on `/` and `/products`): `overflow=0`, hamburger visible at all mobile widths.
+
+---
+
 ## Phase 3A — Cloudflare Setup Smoke Test (2026-10-03) ✅
 
 ### 1. Scope & Dependencies

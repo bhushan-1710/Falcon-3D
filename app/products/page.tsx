@@ -541,7 +541,9 @@ export default async function ProductsPage() {
           display: flex;
           align-items: center;
           gap: var(--space-6);
-          flex-shrink: 0;
+          flex-shrink: 1;
+          min-width: 0;
+          max-width: 100%;
           flex-wrap: wrap;
         }
         .products-cta-band .btn-secondary {

@@ -2,6 +2,32 @@
 
 > **File location**: repo root (`falcon-web/CHANGELOG.md`), not `docs/`.
 
+## [Phase 2c — Mobile Header Overflow Fix] — 2026-10-03
+
+### Root Cause (measured via CDP at 375 px)
+- `scrollWidth: 461px` vs `clientWidth: 375px` on `/products` only — `/` was clean.
+- `.products-cta-band__actions` had `flex-shrink: 0`, which prevented it from compressing inside its 335 px flex parent. The two buttons (`btn-primary` 295.9 px + gap 32 px + `btn-secondary` 120.8 px = 448.7 px) could not shrink, pushing the element's `right` to 460.6 px and the document `scrollWidth` to 461 px. Chrome then reflowed the fixed header to that same width.
+- `.nav-progress` measured `width: 0 / right: 0` — confirmed **not** the cause.
+- Overflow was absent on `/`; no change to Navigation or globals.css required.
+
+### Fix (1 file, 3 lines changed)
+- `app/products/page.tsx` `.products-cta-band__actions`: replaced `flex-shrink: 0` with `flex-shrink: 1; min-width: 0; max-width: 100%`. `flex-wrap: wrap` was already present and now takes effect.
+- `app/products/[slug]/page.tsx` `.pd-actions`: already had no `flex-shrink: 0` — no change needed.
+
+### Verified (CDP, headless Chrome, all 8 checks PASS)
+| URL | Viewport | scrollWidth | overflow | hamburger |
+|-----|----------|------------|---------|----------|
+| `/` | 320 | 320 | 0 | visible |
+| `/` | 375 | 375 | 0 | visible |
+| `/` | 390 | 390 | 0 | visible |
+| `/` | 768 | 753 | 0 | — |
+| `/products` | 320 | 320 | 0 | visible |
+| `/products` | 375 | 375 | 0 | visible |
+| `/products` | 390 | 390 | 0 | visible |
+| `/products` | 768 | 753 | 0 | — |
+
+---
+
 ## [Phase 3A — Cloudflare Setup Smoke Test] — 2026-10-03
 
 ### Added
