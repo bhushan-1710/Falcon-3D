@@ -4,6 +4,48 @@
 
 ---
 
+## Phase 5 — CMS Screens (2026-10-03) ✅
+
+### 1. Scope & Implementation
+- **Projects Management Screen (`app/admin/projects/page.tsx`)**:
+  - Full CRUD interface for projects shown on the public Workshop Wall.
+  - Controls for title, slug, subtitle, description, category, tags, and featured status.
+  - Workshop wall slot counter with visual badge (capped at 6 slots).
+  - One-click duplication API (`/api/admin/projects/[id]/duplicate`) and archive protection before permanent deletion.
+- **Products Management Screen (`app/admin/products/page.tsx`)**:
+  - Full catalog CRUD interface: title, slug, summary, description, category, pricing, lead time, materials, specifications list, tags, and status toggle (draft, published, archived).
+  - Slug collision prevention and unique validation.
+  - Safe deletion workflow (must be archived first).
+  - One-click product duplication API (`/api/admin/products/[id]/duplicate`).
+- **Media Library & Picker (`app/admin/media/page.tsx`, `components/admin/MediaPicker.tsx`)**:
+  - Grid asset view with search and mime-type filtering.
+  - Direct upload to R2 with validation.
+  - Delete-with-warning modal scanning all 9 FK/JSON locations via `/api/admin/media/[id]/usage`.
+  - Reusable modal `MediaPicker` component for selecting images from the library.
+- **Video Management Screen (`app/admin/videos/page.tsx`)**:
+  - External video URL support (YouTube/Vimeo) and direct Cloudflare R2 uploads.
+- **Categories Screen (`app/admin/categories/page.tsx`)**:
+  - Dual tabs for Product Categories and Project Categories with slug generation and sort ordering.
+- **Website Content Live Editor (`app/admin/content/page.tsx`)**:
+  - Live copy editor for Hero, Process, About / Philosophy, Contact / Final CTA, and Products Page.
+  - Fallback preservation with "Reset to Defaults" button per section.
+- **Navigation Manager (`app/admin/navigation/page.tsx`)**:
+  - Ordering controls (move up/down), label, URL destination, visibility toggle, and external link flags.
+  - "Reset to Defaults" option restoring canonical menu structure.
+- **Settings & System Diagnostics (`app/admin/settings/page.tsx`)**:
+  - Real-time infrastructure status indicators for D1 database, R2 storage bucket, and Workers runtime.
+  - Studio profile configuration (Brand name, Contact email, WhatsApp number, Currency, Location).
+  - Audit log table displaying recent administrative mutations.
+
+### 2. Verification
+- TypeScript check (`npx tsc --noEmit`): Exit code 0, zero errors.
+- Admin shell responsive styling: Fluid table wrappers with horizontal scrolling containers for tables preventing page-level overflow.
+
+### 3. Next Phase
+- **Phase 6**: Public Integration + SEO (Wire `Navigation` component to dynamic links with static fallback, wire `Workshop Wall` scene to dynamic featured projects, add metadata and dynamic Open Graph tags for `/products` and `/products/[slug]`).
+
+---
+
 ## Phase 4 — Auth + Admin Shell (2026-10-03) ✅
 
 ### 1. Scope & Implementation

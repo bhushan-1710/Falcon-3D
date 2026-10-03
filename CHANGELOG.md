@@ -2,6 +2,51 @@
 
 > **File location**: repo root (`falcon-web/CHANGELOG.md`), not `docs/`.
 
+## [Phase 5 — CMS Screens] — 2026-10-03
+
+### Added & Configured
+- **Projects Management Screen (`app/admin/projects/page.tsx`)**:
+  - Full CRUD for Workshop Wall projects with title, slug, subtitle, description, category, tags, and featured status.
+  - Dedicated "Featured on Workshop Wall" slot controls with live count indicator (capped at 6 slots).
+  - One-click project duplication API (`/api/admin/projects/[id]/duplicate`) and archive before delete protection.
+- **Products Management Screen (`app/admin/products/page.tsx`)**:
+  - Full catalog CRUD with title, slug, summary, description, category, pricing, lead time, materials, specifications list, tags, and status toggle (draft, published, archived).
+  - Slug uniqueness validation and slug collision prevention.
+  - Safe deletion workflow requiring archive before deletion.
+  - One-click product duplication API (`/api/admin/products/[id]/duplicate`).
+- **Media Library & Picker (`app/admin/media/page.tsx`, `components/admin/MediaPicker.tsx`)**:
+  - Full asset library grid with mime-type filtering, file size, dimensions, and instant previews.
+  - Embedded image upload directly to Cloudflare R2 with magic-byte validation.
+  - Delete-with-warning modal that queries `/api/admin/media/[id]/usage` across all 9 FK/JSON locations before permitting removal.
+  - Reusable modal `MediaPicker` component for assigning featured images and gallery photos to products and projects.
+- **Video Management Screen (`app/admin/videos/page.tsx`)**:
+  - Video asset management supporting external video URLs (YouTube, Vimeo) and direct Cloudflare R2 uploads.
+- **Categories Screen (`app/admin/categories/page.tsx`)**:
+  - Dual-tab management for Product Categories and Project Categories with slug generation and sort ordering.
+- **Website Content Live Editor (`app/admin/content/page.tsx`)**:
+  - Section-by-section live copy editor for Hero, Process, About / Philosophy, Contact / Final CTA, and Products Page.
+  - Safe fallback mechanism with "Reset to Defaults" button per section.
+- **Navigation Manager (`app/admin/navigation/page.tsx`)**:
+  - Full reordering (move up/down), label, URL destination, visibility toggle, and external link flags.
+  - "Reset to Defaults" option to restore canonical studio header menu order.
+- **Settings & System Diagnostics (`app/admin/settings/page.tsx`)**:
+  - Live infrastructure status indicators for D1 database, R2 storage bucket, and Workers runtime.
+  - Studio profile settings (Brand name, Contact email, WhatsApp number, Currency, Location).
+  - Audit log table displaying recent administrative activity and security mutations.
+- **Admin API Endpoints**:
+  - `app/api/admin/products/route.ts`, `[id]/route.ts`, `[id]/duplicate/route.ts`
+  - `app/api/admin/projects/route.ts`, `[id]/route.ts`, `[id]/duplicate/route.ts`
+  - `app/api/admin/categories/route.ts`, `[id]/route.ts`
+  - `app/api/admin/media/route.ts`, `[id]/route.ts`
+  - `app/api/admin/content/route.ts`
+  - `app/api/admin/navigation/route.ts`
+  - `app/api/admin/settings/route.ts`
+
+### Verified
+- TypeScript check (`npx tsc --noEmit`): Passed with zero errors or warnings.
+- Build check: All route handlers and client components compile cleanly.
+
+
 ## [Phase 4 — Auth + Admin Shell] — 2026-10-03
 
 ### Added & Configured
