@@ -1,11 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { uploadMediaWithLimits } from '@/lib/media/client-resize'
 
 interface MediaItem {
   id: string
   key: string
   url: string
+  public_url?: string
+  storage_path?: string
   filename: string
   mime_type: string
   size_bytes: number
@@ -60,24 +63,18 @@ export default function AdminMediaPage() {
     setUploadError(null)
 
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const res = await fetch('/api/admin/media/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      const data = await res.json()
-      if (res.ok) {
+      const res = await uploadMediaWithLimits(file)
+      if (res.success) {
         fetchMedia()
       } else {
-        setUploadError(data.error || 'Upload failed')
+        setUploadError(res.error || 'Upload failed')
       }
     } catch (err: any) {
       setUploadError(err.message)
     } finally {
       setUploading(false)
+      // reset file input
+      e.target.value = ''
     }
   }
 
@@ -122,7 +119,7 @@ export default function AdminMediaPage() {
             Media Library
           </h1>
           <p style={{ fontSize: '13px', color: '#a1a1aa', margin: 0 }}>
-            Objects stored in Cloudflare R2 bucket with immutable edge cache
+            Stored in Supabase Storage (falcon-media bucket). Client-side image resizing applied. Max file size: 50 MB.
           </p>
         </div>
 
@@ -136,7 +133,7 @@ export default function AdminMediaPage() {
           cursor: uploading ? 'not-allowed' : 'pointer',
           opacity: uploading ? 0.7 : 1,
         }}>
-          {uploading ? 'Uploading…' : '+ Upload Image'}
+          {uploading ? 'Processing & Uploading…' : '+ Upload Image'}
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp,image/avif"

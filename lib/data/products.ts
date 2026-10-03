@@ -176,7 +176,7 @@ export async function getPublishedProducts(): Promise<Product[]> {
       `)
       const res = await stmt.all<ProductDbRow>()
       if (res.results && res.results.length > 0) {
-        return res.results.map((row) => mapProductRow(row))
+        return res.results.map((row: any) => mapProductRow(row))
       }
     }
   } catch (error) {
@@ -239,7 +239,7 @@ export async function getPublishedProductBySlug(slug: string): Promise<Product |
             height: number | null
           }>()
           if (galleryRes.results) {
-            gallery = galleryRes.results.map((g) => ({
+            gallery = galleryRes.results.map((g: any) => ({
               id: g.id,
               url: resolveMediaUrl(g.key),
               altText: g.altText ?? undefined,
@@ -289,7 +289,7 @@ export async function getProductCategories(): Promise<ProductCategory[]> {
         isActive: number
       }>()
       if (res.results && res.results.length > 0) {
-        return res.results.map((row) => ({
+        return res.results.map((row: any) => ({
           id: row.id,
           name: row.name,
           slug: row.slug,

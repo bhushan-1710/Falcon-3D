@@ -1,22 +1,19 @@
 /**
  * scripts/create-admin.ts
  *
- * Local CLI script to create an admin user in D1.
+ * Local & production CLI script to create an admin user in Turso / SQLite.
  * Prompts for email and password interactively, generates a random 32-byte salt,
- * computes PBKDF2-SHA-512 hash using WebCrypto, and stores only the hash in D1.
+ * computes PBKDF2-SHA-512 hash using WebCrypto, and stores only the hash in the database.
  *
  * Never stores plain passwords in env or repo files.
  *
  * Usage:
- *   npx tsx scripts/create-admin.ts [--remote]
+ *   npx tsx scripts/create-admin.ts
  */
 
 import readline from 'node:readline'
-import { execSync } from 'node:child_process'
-import path from 'node:path'
 import { generateSalt, hashPassword, PBKDF2_ITERATIONS } from '../lib/auth'
-
-const isRemote = process.argv.includes('--remote')
+import { getRawLibSqlClient, runMigrations } from '../lib/db'
 
 function ask(question: string, hidden = false): Promise<string> {
   const rl = readline.createInterface({
@@ -32,7 +29,6 @@ function ask(question: string, hidden = false): Promise<string> {
       })
     } else {
       process.stdout.write(question)
-      // Basic concealed input
       let input = ''
       process.stdin.setRawMode(true)
       process.stdin.resume()
@@ -47,7 +43,6 @@ function ask(question: string, hidden = false): Promise<string> {
           console.log('')
           resolve(input.trim())
         } else if (char === '\u0003') {
-          // Ctrl+C
           process.exit(1)
         } else if (char === '\b' || char === '\u007f') {
           if (input.length > 0) {
@@ -64,7 +59,11 @@ function ask(question: string, hidden = false): Promise<string> {
 
 async function main() {
   console.log('=== Falcon 3D Prints — Create Admin User ===')
-  console.log(`Target: ${isRemote ? 'REMOTE Cloudflare D1' : 'LOCAL D1 Database'}\n`)
+  const dbUrl = process.env.DATABASE_URL || 'file:local.db'
+  console.log(`Database Target: ${dbUrl}\n`)
+
+  const client = getRawLibSqlClient()
+  await runMigrations(client)
 
   const email = await ask('Admin Email: ')
   if (!email || !email.includes('@')) {
@@ -91,28 +90,26 @@ async function main() {
 
   const sql = `
     INSERT INTO users (id, email, password_hash, password_salt, pbkdf2_iters, is_active)
-    VALUES ('${userId}', '${email.toLowerCase()}', '${hash}', '${salt}', ${PBKDF2_ITERATIONS}, 1)
+    VALUES (?, ?, ?, ?, ?, 1)
     ON CONFLICT(email) DO UPDATE SET
       password_hash = excluded.password_hash,
       password_salt = excluded.password_salt,
       pbkdf2_iters = excluded.pbkdf2_iters,
       is_active = 1,
       updated_at = unixepoch();
-  `.replace(/\s+/g, ' ').trim()
+  `
 
-  const repoDir = path.resolve(__dirname, '..')
-  const remoteFlag = isRemote ? '--remote' : '--local'
-  const cmd = `npx.cmd wrangler d1 execute falcon-db ${remoteFlag} --command "${sql.replace(/"/g, '""')}"`
-
-  console.log(`Executing D1 user registration (${remoteFlag})...`)
+  console.log(`Registering admin user in database...`)
   try {
-    const out = execSync(cmd, { cwd: repoDir, encoding: 'utf8' })
-    console.log(out)
+    await client.execute({
+      sql,
+      args: [userId, email.toLowerCase(), hash, salt, PBKDF2_ITERATIONS],
+    })
     console.log(`\n Successfully created / updated admin user: ${email}`)
     console.log(`User ID: ${userId}`)
     console.log('No password or secret was written to disk or environment.')
   } catch (err: any) {
-    console.error('Failed to execute D1 user insert:', err.message)
+    console.error('Failed to create admin user:', err.message)
     process.exit(1)
   }
 }

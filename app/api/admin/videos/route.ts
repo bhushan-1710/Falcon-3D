@@ -21,7 +21,7 @@ export async function GET(request: NextRequest) {
     }
 
     const res = await db.prepare(`
-      SELECT v.id, v.r2_key, v.external_url, v.title, v.description,
+      SELECT v.id, v.r2_key, v.external_url, v.storage_path, v.public_url, v.title, v.description,
              v.duration_secs, v.thumbnail_id, v.created_at,
              m.key as thumb_key, m.alt_text as thumb_alt
       FROM videos v

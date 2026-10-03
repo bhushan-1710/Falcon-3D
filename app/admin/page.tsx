@@ -86,7 +86,7 @@ export default async function AdminDashboardPage() {
       `).all<{ id: string; action: string; entity_type: string | null; entity_id: string | null; created_at: number }>()
 
       if (actRes.results) {
-        recentActivity = actRes.results.map((r) => ({
+        recentActivity = actRes.results.map((r: any) => ({
           id: r.id,
           action: r.action,
           entityType: r.entity_type,

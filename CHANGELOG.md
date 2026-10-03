@@ -2,6 +2,33 @@
 
 > **File location**: repo root (`falcon-web/CHANGELOG.md`), not `docs/`.
 
+## [Vercel + Turso + Supabase Storage Amendment] — 2026-10-04
+
+### Added & Configured
+- **Turso Database Layer (`@libsql/client`)**:
+  - Installed `@libsql/client` and implemented `lib/db/index.ts` with D1-compatible prepared statement and batch API.
+  - Seamless fallback to `file:local.db` for local offline development.
+  - Added migration runner `scripts/migrate.ts` (`npm run migrate`) and updated admin creation scripts `scripts/create-admin.ts`.
+  - Added `migrations/0003_storage_paths.sql` adding `storage_path` and `public_url` columns to `media` and `videos`.
+- **Supabase Storage Engine (`lib/storage/index.ts`)**:
+  - Implemented REST-based storage operations (`putObject`, `deleteObject`, `getPublicUrl`, `createSignedUploadUrl`, `verifyStoredObject`) using native Node.js `fetch` without heavy SDKs.
+  - Target bucket: `falcon-media` (public for reads).
+- **Vercel ~4.5 MB Limit Compliance**:
+  - Browser-side canvas image resizing in `lib/media/client-resize.ts` producing full (max 2560px) and thumbnail (320px) images before upload.
+  - Images $\le 4$ MB uploaded via authenticated endpoint `/api/admin/media/upload`.
+  - Large files and videos (up to 50 MB Supabase free tier limit) uploaded directly to Supabase via signed upload URLs (`/api/admin/media/signed-upload`), bypassing Vercel request limits.
+  - Added post-upload verification in `/api/admin/media/complete-upload` inspecting initial bytes for magic bytes and immediately deleting invalid/SVG files.
+- **Secrets Security & Build Checks**:
+  - Documented environment variables in `.env.example` (names only).
+  - Ensured `.env*` is git-ignored and added `.storage/` and `local.db*` to `.gitignore`.
+  - Created build check `scripts/check-secrets.ts` (`npm run check-secrets`) verifying that `SUPABASE_SERVICE_ROLE_KEY` is never included in client chunks or git history.
+- **Automated Keep-Alive Cron**:
+  - Created protected `/api/cron/keepalive` checking `Authorization: Bearer <CRON_SECRET>` header.
+  - Added cron definition in `vercel.json` (`0 0 */3 * *`) running every 3 days to ping Turso and Supabase Storage.
+- **Verification**:
+  - CDP automated test suite verified: login, spoofed file rejection, valid image upload, video direct signed upload, product media attachment, public product rendering, delete-with-warning usage scanner, confirmed deletion, and keep-alive ping.
+  - Production build (`npm run build`) succeeded with 0 errors.
+
 ## [Multi-Device & Responsive Optimization] — 2026-10-03
 
 ### Added & Configured

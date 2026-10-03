@@ -27,7 +27,7 @@ export async function getNavItems(): Promise<NavItem[]> {
         open_new_tab: number
       }>()
       if (res.results && res.results.length > 0) {
-        return res.results.map((row) => ({
+        return res.results.map((row: any) => ({
           id: row.id,
           label: row.label,
           url: row.url,

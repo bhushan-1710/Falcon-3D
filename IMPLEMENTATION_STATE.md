@@ -4,6 +4,40 @@
 
 ---
 
+## Vercel + Turso + Supabase Storage Architecture Amendment (2026-10-04) ✅
+
+### 1. Scope & Implementation
+- **Architecture Transformation**:
+  - **Hosting**: Migrated runtime target to **Vercel** serverless functions with standard Node.js runtime.
+  - **Database**: Migrated to **Turso** via `@libsql/client`. Implemented a transparent D1-compatible compatibility layer (`prepare().bind().first()/.all()/.run()`, `batch()`) in `lib/db/index.ts` with local SQLite fallback (`file:local.db`). Zero DAL rewrite required across all 20+ query files.
+  - **Storage**: Media assets stored in **Supabase Storage** (`falcon-media` bucket, public for reads). Built `lib/storage/index.ts` invoking the Supabase Storage REST API with native `fetch` (no Supabase Auth or database dependencies).
+- **Vercel ~4.5 MB Body Limit Compliance**:
+  - **Browser-Side Resizing (`lib/media/client-resize.ts`)**: Resizes images via HTML5 canvas (full max 2560px + 320px thumbnail) before uploading. Resized images $\le 4$ MB route through `/api/admin/media/upload`.
+  - **Direct Signed Uploads (`/api/admin/media/signed-upload`, `/api/admin/media/complete-upload`)**: Files $> 4$ MB and all video files (up to 50 MB Supabase free tier limit) upload directly from the browser to Supabase using signed upload URLs.
+- **Security Protections**:
+  - Authenticated admin-only upload endpoints.
+  - Server-side MIME allowlist and magic-byte signature checks (JPEG, PNG, WebP, AVIF, MP4, WebM).
+  - Strict SVG and script tag rejection (`<svg`, `<?xml`, `<html`).
+  - Stored object verification: For direct uploads, initial bytes are retrieved from storage (`Range: bytes=0-511`) and verified against magic byte signatures; unverified or spoofed files are deleted immediately from Supabase (`deleteObject`).
+  - Delete-with-warning check: Scans 9 foreign keys / JSON fields across categories, projects, products, videos, and website content before allowing deletion. Confirmed delete removes the object from Supabase Storage.
+- **Migration 0003 (`migrations/0003_storage_paths.sql`)**:
+  - Adds `storage_path` and `public_url` columns to `media` and `videos` tables.
+  - Populates existing rows with canonical keys.
+- **Secrets Management & Build Verification**:
+  - `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` added to `.env.example` as names only.
+  - `.env*` files strictly git-ignored.
+  - Added build check `scripts/check-secrets.ts` (`npm run check-secrets`) verifying that `SUPABASE_SERVICE_ROLE_KEY` never appears in any `.next/static/` client bundle or git repository.
+- **Supabase Free Tier Keep-Alive**:
+  - Protected route `GET /api/cron/keepalive` checking `Authorization: Bearer <CRON_SECRET>` header.
+  - Pings Turso database (`SELECT 1 as ok`) and Supabase Storage (`POST /storage/v1/object/list/falcon-media limit 1`).
+  - Scheduled in `vercel.json` (`0 0 */3 * *`) to execute every 3 days.
+- **Verification**:
+  - In-browser CDP verification (`scratch/verify_supabase_plan.js`) passed 7/7 tests: authentication, spoofed file rejection, valid image upload, direct video signed upload, product attachment, public display on `/products`, delete-with-warning, and keep-alive ping.
+  - `npm run check-secrets`: Passed 0 leaks.
+  - `npm run build`: Exited 0 with Turbopack.
+
+---
+
 ## Multi-Device & Responsive Optimization (2026-10-03) ✅
 
 ### 1. Scope & Implementation

@@ -64,6 +64,7 @@ export function verifyImageMagicBytes(buffer: Uint8Array): ValidationResult {
   }
 
   // 4. AVIF: offset 4-7 'ftyp', offset 8-11 'avif' or 'avis'
+// 4. AVIF: offset 4-7 'ftyp', offset 8-11 'avif' or 'avis'
   if (
     buffer[4] === 0x66 &&
     buffer[5] === 0x74 &&
@@ -79,14 +80,67 @@ export function verifyImageMagicBytes(buffer: Uint8Array): ValidationResult {
 
   // Check for SVG signatures to explicitly reject with a clear error
   const headerText = new TextDecoder('utf-8', { fatal: false })
-    .decode(buffer.subarray(0, Math.min(100, buffer.length)))
+    .decode(buffer.subarray(0, Math.min(256, buffer.length)))
     .toLowerCase()
 
-  if (headerText.includes('<svg') || headerText.includes('<?xml')) {
-    return { valid: false, error: 'SVG files are strictly disallowed for security reasons' }
+  if (headerText.includes('<svg') || headerText.includes('<?xml') || headerText.includes('<html')) {
+    return { valid: false, error: 'SVG and script files are strictly disallowed for security reasons' }
   }
 
   return { valid: false, error: 'File magic bytes do not match any allowed image format (JPEG, PNG, WebP, AVIF)' }
+}
+
+/**
+ * Verify video buffer against MP4 and WebM magic bytes.
+ */
+export function verifyVideoMagicBytes(buffer: Uint8Array): { valid: boolean; error?: string; detectedMime?: string } {
+  if (buffer.length < 12) {
+    return { valid: false, error: 'File too small to be a valid video' }
+  }
+
+  // WebM / EBML: 1A 45 DF A3
+  if (buffer[0] === 0x1a && buffer[1] === 0x45 && buffer[2] === 0xdf && buffer[3] === 0xa3) {
+    return { valid: true, detectedMime: 'video/webm' }
+  }
+
+  // MP4 / QuickTime: offset 4-7 is 'ftyp'
+  if (buffer[4] === 0x66 && buffer[5] === 0x74 && buffer[6] === 0x79 && buffer[7] === 0x70) {
+    return { valid: true, detectedMime: 'video/mp4' }
+  }
+
+  // QuickTime (moov, mdat, wide)
+  const tag = String.fromCharCode(buffer[4], buffer[5], buffer[6], buffer[7])
+  if (['moov', 'mdat', 'wide'].includes(tag)) {
+    return { valid: true, detectedMime: 'video/quicktime' }
+  }
+
+  const headerText = new TextDecoder('utf-8', { fatal: false })
+    .decode(buffer.subarray(0, Math.min(256, buffer.length)))
+    .toLowerCase()
+
+  if (headerText.includes('<svg') || headerText.includes('<?xml')) {
+    return { valid: false, error: 'SVG files are strictly disallowed' }
+  }
+
+  return { valid: false, error: 'File magic bytes do not match allowed video formats (MP4, WebM)' }
+}
+
+/**
+ * Verify any stored object bytes (image or video)
+ */
+export function verifyAnyMediaBytes(buffer: Uint8Array, isVideo: boolean = false): { valid: boolean; error?: string } {
+  const headerText = new TextDecoder('utf-8', { fatal: false })
+    .decode(buffer.subarray(0, Math.min(256, buffer.length)))
+    .toLowerCase()
+
+  if (headerText.includes('<svg') || headerText.includes('<?xml') || headerText.includes('<html')) {
+    return { valid: false, error: 'SVG/HTML files are strictly disallowed' }
+  }
+
+  if (isVideo) {
+    return verifyVideoMagicBytes(buffer)
+  }
+  return verifyImageMagicBytes(buffer)
 }
 
 /**

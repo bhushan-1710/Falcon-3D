@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { uploadMediaWithLimits } from '@/lib/media/client-resize'
 
 interface Video {
   id: string
@@ -8,6 +9,8 @@ interface Video {
   description?: string
   external_url?: string
   r2_key?: string
+  storage_path?: string
+  public_url?: string
   duration_secs?: number
   created_at: number
 }
@@ -22,6 +25,7 @@ export default function AdminVideosPage() {
   const [durationSecs, setDurationSecs] = useState<number | ''>('')
   const [saving, setSaving] = useState(false)
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
+  const [videoUploading, setVideoUploading] = useState(false)
 
   useEffect(() => {
     fetchVideos()
@@ -37,6 +41,32 @@ export default function AdminVideosPage() {
       }
     } catch {}
     setLoading(false)
+  }
+
+  async function handleVideoFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setVideoUploading(true)
+    setErrorMsg(null)
+
+    try {
+      const res = await uploadMediaWithLimits(file, {
+        isVideo: true,
+        title: file.name.replace(/\.[^/.]+$/, ''),
+      })
+
+      if (res.success) {
+        fetchVideos()
+      } else {
+        setErrorMsg(res.error || 'Video upload failed')
+      }
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Video upload error')
+    } finally {
+      setVideoUploading(false)
+      e.target.value = ''
+    }
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -89,29 +119,66 @@ export default function AdminVideosPage() {
             Video Demonstrators
           </h1>
           <p style={{ fontSize: '13px', color: '#a1a1aa', margin: 0 }}>
-            Manage YouTube/Vimeo links and R2 uploaded video demonstrations
+            YouTube/Vimeo links & Direct Supabase video uploads (Max 50 MB on free tier)
           </p>
         </div>
 
-        <button
-          onClick={() => {
-            setErrorMsg(null)
-            setIsOpen(true)
-          }}
-          style={{
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <label style={{
             padding: '10px 18px',
-            backgroundColor: '#fff',
-            color: '#000',
-            border: 'none',
+            backgroundColor: '#27272a',
+            color: '#fff',
             borderRadius: '6px',
             fontWeight: 600,
             fontSize: '13px',
-            cursor: 'pointer',
-          }}
-        >
-          + Add External Video
-        </button>
+            cursor: videoUploading ? 'not-allowed' : 'pointer',
+            opacity: videoUploading ? 0.7 : 1,
+            border: '1px solid #3f3f46',
+          }}>
+            {videoUploading ? 'Direct Uploading (Supabase)…' : '📁 Upload MP4/WebM Video'}
+            <input
+              type="file"
+              accept="video/mp4,video/webm"
+              disabled={videoUploading}
+              onChange={handleVideoFileUpload}
+              style={{ display: 'none' }}
+            />
+          </label>
+
+          <button
+            onClick={() => {
+              setErrorMsg(null)
+              setIsOpen(true)
+            }}
+            style={{
+              padding: '10px 18px',
+              backgroundColor: '#fff',
+              color: '#000',
+              border: 'none',
+              borderRadius: '6px',
+              fontWeight: 600,
+              fontSize: '13px',
+              cursor: 'pointer',
+            }}
+          >
+            + Add External Video (YouTube/Vimeo)
+          </button>
+        </div>
       </div>
+
+      {errorMsg && (
+        <div style={{
+          padding: '12px 16px',
+          backgroundColor: 'rgba(239, 68, 68, 0.1)',
+          border: '1px solid #ef4444',
+          borderRadius: '6px',
+          color: '#fca5a5',
+          fontSize: '13px',
+          marginBottom: '20px',
+        }}>
+          {errorMsg}
+        </div>
+      )}
 
       <div style={{
         backgroundColor: '#141418',
@@ -132,47 +199,50 @@ export default function AdminVideosPage() {
             {loading ? (
               <tr><td colSpan={4} style={{ padding: '32px', textAlign: 'center', color: '#71717a' }}>Loading videos…</td></tr>
             ) : videos.length === 0 ? (
-              <tr><td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#71717a' }}>No video demonstrations registered. Click "+ Add External Video" to register a YouTube/Vimeo video.</td></tr>
+              <tr><td colSpan={4} style={{ padding: '40px', textAlign: 'center', color: '#71717a' }}>No video demonstrations registered. Upload an MP4/WebM video or add a YouTube/Vimeo link.</td></tr>
             ) : (
-              videos.map((v) => (
-                <tr key={v.id} style={{ borderBottom: '1px solid #222226' }}>
-                  <td style={{ padding: '12px 16px', fontWeight: 600, color: '#fff' }}>
-                    {v.title}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#d4d4d8', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                    {v.external_url ? (
-                      <a href={v.external_url} target="_blank" rel="noreferrer" style={{ color: '#38bdf8', textDecoration: 'none' }}>
-                        🔗 {v.external_url}
-                      </a>
-                    ) : (
-                      <span style={{ color: '#a1a1aa' }}>📦 R2 Hosted ({v.r2_key})</span>
-                    )}
-                  </td>
-                  <td style={{ padding: '12px 16px', color: '#a1a1aa' }}>
-                    {v.duration_secs ? `${v.duration_secs}s` : '—'}
-                  </td>
-                  <td style={{ padding: '12px 16px', textAlign: 'right' }}>
-                    {v.external_url && (
-                      <a
-                        href={v.external_url}
-                        target="_blank"
-                        rel="noreferrer"
-                        style={{
-                          padding: '4px 8px',
-                          backgroundColor: '#27272a',
-                          border: 'none',
-                          borderRadius: '4px',
-                          color: '#fff',
-                          fontSize: '11px',
-                          textDecoration: 'none',
-                        }}
-                      >
-                        Watch ↗
-                      </a>
-                    )}
-                  </td>
-                </tr>
-              ))
+              videos.map((v) => {
+                const targetUrl = v.external_url || v.public_url
+                return (
+                  <tr key={v.id} style={{ borderBottom: '1px solid #222226' }}>
+                    <td style={{ padding: '12px 16px', fontWeight: 600, color: '#fff' }}>
+                      {v.title}
+                    </td>
+                    <td style={{ padding: '12px 16px', color: '#d4d4d8', maxWidth: '300px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {v.external_url ? (
+                        <a href={v.external_url} target="_blank" rel="noreferrer" style={{ color: '#38bdf8', textDecoration: 'none' }}>
+                          🔗 {v.external_url}
+                        </a>
+                      ) : (
+                        <span style={{ color: '#34d399' }}>🎥 Direct Storage ({v.storage_path || v.r2_key})</span>
+                      )}
+                    </td>
+                    <td style={{ padding: '12px 16px', color: '#a1a1aa' }}>
+                      {v.duration_secs ? `${v.duration_secs}s` : '—'}
+                    </td>
+                    <td style={{ padding: '12px 16px', textAlign: 'right' }}>
+                      {targetUrl && (
+                        <a
+                          href={targetUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          style={{
+                            padding: '4px 8px',
+                            backgroundColor: '#27272a',
+                            border: 'none',
+                            borderRadius: '4px',
+                            color: '#fff',
+                            fontSize: '11px',
+                            textDecoration: 'none',
+                          }}
+                        >
+                          Watch ↗
+                        </a>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })
             )}
           </tbody>
         </table>

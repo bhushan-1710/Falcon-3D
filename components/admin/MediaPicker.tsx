@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react'
 
+import { uploadMediaWithLimits } from '@/lib/media/client-resize'
+
 export interface SelectedMedia {
   id: string
   url: string
@@ -50,26 +52,20 @@ export function MediaPicker({ value, initialUrl, onChange, label = 'Featured Ima
 
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const res = await fetch('/api/admin/media/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      const data = await res.json()
-      if (res.ok && data.media) {
-        onChange(data.media.id, data.media.url)
-        setPreviewUrl(data.media.url)
+      const res = await uploadMediaWithLimits(file)
+      if (res.success && res.data) {
+        const url = res.data.public_url || res.data.url
+        onChange(res.data.id, url)
+        setPreviewUrl(url)
         setIsOpen(false)
       } else {
-        alert(data.error || 'Upload failed')
+        alert(res.error || 'Upload failed')
       }
     } catch (err: any) {
       alert('Upload error: ' + err.message)
     } finally {
       setUploading(false)
+      e.target.value = ''
     }
   }
 
