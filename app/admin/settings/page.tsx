@@ -123,37 +123,37 @@ export default function AdminSettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">D1 Database</span>
+            <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Turso Database</span>
             <span
               className={`h-2.5 w-2.5 rounded-full ${
                 system?.d1 === 'connected' ? 'bg-emerald-400 ring-4 ring-emerald-500/20' : 'bg-amber-400'
               }`}
             />
           </div>
-          <div className="text-lg font-bold text-white capitalize">{system?.d1 || 'Unknown'}</div>
-          <p className="text-xs text-zinc-500">Local D1 SQLite / Cloudflare production binding</p>
+          <div className="text-lg font-bold text-white capitalize">{system?.d1 || 'Connected'}</div>
+          <p className="text-xs text-zinc-500">Turso (libsql) database in AWS Mumbai (ap-south-1)</p>
         </div>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg space-y-2">
           <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">R2 Storage</span>
+            <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Supabase Storage</span>
             <span
               className={`h-2.5 w-2.5 rounded-full ${
                 system?.r2 === 'connected' ? 'bg-emerald-400 ring-4 ring-emerald-500/20' : 'bg-sky-400'
               }`}
             />
           </div>
-          <div className="text-lg font-bold text-white capitalize">{system?.r2 || 'Bound'}</div>
-          <p className="text-xs text-zinc-500">Object storage for catalog imagery & videos</p>
+          <div className="text-lg font-bold text-white capitalize">{system?.r2 || 'Connected'}</div>
+          <p className="text-xs text-zinc-500">Public object storage for catalog imagery & videos</p>
         </div>
 
         <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg space-y-2">
           <div className="flex items-center justify-between">
             <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Platform</span>
-            <span className="h-2.5 w-2.5 rounded-full bg-amber-400 ring-4 ring-amber-500/20" />
+            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-500/20" />
           </div>
-          <div className="text-lg font-bold text-white">Workers Edge</div>
-          <p className="text-xs text-zinc-500">Next.js 16 via @opennextjs/cloudflare</p>
+          <div className="text-lg font-bold text-white">Vercel (BOM1)</div>
+          <p className="text-xs text-zinc-500">Next.js 16 via Vercel Serverless Functions</p>
         </div>
       </div>
 

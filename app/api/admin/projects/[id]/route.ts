@@ -3,6 +3,8 @@ import { getDB } from '@/lib/cloudflare/context'
 import { verifyAdminRequest } from '@/lib/auth/guard'
 import { logActivity } from '@/lib/auth'
 
+import { getPublicUrl } from '@/lib/storage'
+
 export const dynamic = 'force-dynamic'
 
 function slugify(text: string): string {
@@ -23,31 +25,38 @@ export async function GET(
 
     const project = await db.prepare(`
       SELECT p.*, c.name as category_name,
-             m.key as image_key
+             m.key as image_key, m.storage_path as image_storage_path, m.public_url as image_public_url
       FROM projects p
       LEFT JOIN categories c ON p.category_id = c.id
-      LEFT JOIN media m ON p.featured_image_id = m.id
+      LEFT JOIN media m ON p.featured_image_id = m.id AND m.deleted_at IS NULL
       WHERE p.id = ?
-    `).bind(id).first()
+    `).bind(id).first<any>()
 
     if (!project) {
       return NextResponse.json({ error: 'Project not found' }, { status: 404 })
     }
 
     const galleryRes = await db.prepare(`
-      SELECT pm.media_id, pm.sort_order, m.key
+      SELECT pm.media_id, pm.sort_order, m.key, m.storage_path, m.public_url
       FROM project_media pm
-      LEFT JOIN media m ON pm.media_id = m.id
+      LEFT JOIN media m ON pm.media_id = m.id AND m.deleted_at IS NULL
       WHERE pm.project_id = ?
       ORDER BY pm.sort_order ASC
-    `).bind(id).all()
+    `).bind(id).all<any>()
+
+    const gallery = (galleryRes.results || []).map((g: any) => ({
+      ...g,
+      url: g.public_url || (g.storage_path ? getPublicUrl(g.storage_path) : (g.key ? getPublicUrl(g.key) : null)),
+    }))
+
+    const imageUrl = project.image_public_url || (project.image_storage_path ? getPublicUrl(project.image_storage_path) : (project.image_key ? getPublicUrl(project.image_key) : null))
 
     return NextResponse.json({
       project: {
         ...project,
-        imageUrl: (project as any).image_key ? `/api/media/${(project as any).image_key}` : null,
-        is_featured: Boolean((project as any).is_featured),
-        gallery: galleryRes.results || [],
+        imageUrl,
+        is_featured: Boolean(project.is_featured),
+        gallery,
       },
     })
   } catch (error) {

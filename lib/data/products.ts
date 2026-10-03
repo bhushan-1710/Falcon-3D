@@ -2,6 +2,7 @@ import { Product, ProductCategory, ProductMedia } from '@/lib/types/products'
 import { fixtureProducts, fixtureCategories } from '@/lib/fixtures/products'
 import { brand } from '@/lib/content'
 import { getDB } from '@/lib/cloudflare/context'
+import { getPublicUrl } from '@/lib/storage'
 
 /**
  * Gate for local development fixtures.
@@ -15,36 +16,8 @@ export function areFixturesEnabled(): boolean {
   )
 }
 
-/**
- * Configured Site URL helper.
- * Reads strictly from SITE_URL or NEXT_PUBLIC_SITE_URL.
- * Returns null if not configured or if placeholder text is detected.
- */
-export function getConfiguredSiteUrl(): string | null {
-  const url = process.env.SITE_URL || process.env.NEXT_PUBLIC_SITE_URL
-  if (url && url.startsWith('http') && !url.includes('[CONFIRM')) {
-    return url.replace(/\/+$/, '')
-  }
-  return null
-}
-
-/**
- * WhatsApp Enquiry URL Generator.
- * Relative-aware: includes "Page: <url>" only when a live site URL is configured.
- * Does not invent domain names.
- */
-export function buildProductWhatsAppUrl(product: Pick<Product, 'title' | 'slug'>): string {
-  const siteUrl = getConfiguredSiteUrl()
-  const lines: string[] = [
-    `Hi Falcon 3D Prints, I'm interested in the *${product.title}*.`,
-  ]
-  if (siteUrl) {
-    lines.push(`Page: ${siteUrl}/products/${product.slug}`)
-  }
-  const text = lines.join('\n')
-  const phone = brand.phoneE164.replace('+', '')
-  return `https://wa.me/${phone}?text=${encodeURIComponent(text)}`
-}
+// Re-export client-safe helpers
+export { getConfiguredSiteUrl, buildProductWhatsAppUrl } from '@/lib/products-utils'
 
 /**
  * Helper to resolve media key/URL.
@@ -54,7 +27,7 @@ export function resolveMediaUrl(keyOrUrl: string | null | undefined): string {
   if (keyOrUrl.startsWith('http://') || keyOrUrl.startsWith('https://') || keyOrUrl.startsWith('/')) {
     return keyOrUrl
   }
-  return `/api/media/${keyOrUrl}`
+  return getPublicUrl(keyOrUrl)
 }
 
 interface ProductDbRow {
@@ -86,11 +59,15 @@ interface ProductDbRow {
   cat_active: number | null
   feat_id: string | null
   feat_key: string | null
+  feat_storage_path: string | null
+  feat_public_url: string | null
   feat_alt: string | null
   feat_cap: string | null
   feat_w: number | null
   feat_h: number | null
   video_url: string | null
+  video_storage_path: string | null
+  video_public_url: string | null
   video_r2_key: string | null
 }
 
@@ -106,10 +83,11 @@ function mapProductRow(row: ProductDbRow, gallery: ProductMedia[] = []): Product
       }
     : undefined
 
-  const featuredImage: ProductMedia | undefined = row.feat_id && row.feat_key
+  const featUrl = row.feat_public_url || (row.feat_storage_path ? getPublicUrl(row.feat_storage_path) : (row.feat_key ? resolveMediaUrl(row.feat_key) : ''))
+  const featuredImage: ProductMedia | undefined = row.feat_id && featUrl
     ? {
         id: row.feat_id,
-        url: resolveMediaUrl(row.feat_key),
+        url: featUrl,
         altText: row.feat_alt ?? undefined,
         caption: row.feat_cap ?? undefined,
         width: row.feat_w ?? undefined,
@@ -117,7 +95,7 @@ function mapProductRow(row: ProductDbRow, gallery: ProductMedia[] = []): Product
       }
     : undefined
 
-  const videoUrl = row.video_url || (row.video_r2_key ? resolveMediaUrl(row.video_r2_key) : undefined)
+  const videoUrl = row.video_public_url || row.video_url || (row.video_storage_path ? getPublicUrl(row.video_storage_path) : (row.video_r2_key ? resolveMediaUrl(row.video_r2_key) : undefined))
 
   return {
     id: row.id,
@@ -148,7 +126,7 @@ function mapProductRow(row: ProductDbRow, gallery: ProductMedia[] = []): Product
 
 /**
  * Data Access Layer for Products
- * Queries Cloudflare D1 with fallback to dev fixtures or empty default.
+ * Queries Turso / Cloudflare D1 with fallback to dev fixtures or empty default.
  */
 export async function getPublishedProducts(): Promise<Product[]> {
   try {
@@ -164,13 +142,14 @@ export async function getPublishedProducts(): Promise<Product[]> {
           p.created_at as createdAt, p.updated_at as updatedAt,
           c.id as cat_id, c.name as cat_name, c.slug as cat_slug, c.description as cat_desc,
           c.sort_order as cat_sort, c.is_active as cat_active,
-          m.id as feat_id, m.key as feat_key, m.alt_text as feat_alt, m.caption as feat_cap,
+          m.id as feat_id, m.key as feat_key, m.storage_path as feat_storage_path, m.public_url as feat_public_url,
+          m.alt_text as feat_alt, m.caption as feat_cap,
           m.width as feat_w, m.height as feat_h,
-          v.external_url as video_url, v.r2_key as video_r2_key
+          v.external_url as video_url, v.storage_path as video_storage_path, v.public_url as video_public_url, v.r2_key as video_r2_key
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
-        LEFT JOIN media m ON p.featured_image_id = m.id
-        LEFT JOIN videos v ON p.video_id = v.id
+        LEFT JOIN media m ON p.featured_image_id = m.id AND m.deleted_at IS NULL
+        LEFT JOIN videos v ON p.video_id = v.id AND v.deleted_at IS NULL
         WHERE p.status = 'PUBLISHED' AND p.deleted_at IS NULL
         ORDER BY p.sort_order ASC, p.created_at DESC
       `)
@@ -208,13 +187,14 @@ export async function getPublishedProductBySlug(slug: string): Promise<Product |
           p.created_at as createdAt, p.updated_at as updatedAt,
           c.id as cat_id, c.name as cat_name, c.slug as cat_slug, c.description as cat_desc,
           c.sort_order as cat_sort, c.is_active as cat_active,
-          m.id as feat_id, m.key as feat_key, m.alt_text as feat_alt, m.caption as feat_cap,
+          m.id as feat_id, m.key as feat_key, m.storage_path as feat_storage_path, m.public_url as feat_public_url,
+          m.alt_text as feat_alt, m.caption as feat_cap,
           m.width as feat_w, m.height as feat_h,
-          v.external_url as video_url, v.r2_key as video_r2_key
+          v.external_url as video_url, v.storage_path as video_storage_path, v.public_url as video_public_url, v.r2_key as video_r2_key
         FROM products p
         LEFT JOIN categories c ON p.category_id = c.id
-        LEFT JOIN media m ON p.featured_image_id = m.id
-        LEFT JOIN videos v ON p.video_id = v.id
+        LEFT JOIN media m ON p.featured_image_id = m.id AND m.deleted_at IS NULL
+        LEFT JOIN videos v ON p.video_id = v.id AND v.deleted_at IS NULL
         WHERE p.slug = ? AND p.status = 'PUBLISHED' AND p.deleted_at IS NULL
       `).bind(slug)
       
@@ -224,7 +204,7 @@ export async function getPublishedProductBySlug(slug: string): Promise<Product |
         let gallery: ProductMedia[] = []
         try {
           const galleryStmt = db.prepare(`
-            SELECT pm.media_id as id, m.key, m.alt_text as altText, m.caption, m.width, m.height
+            SELECT pm.media_id as id, m.key, m.storage_path, m.public_url, m.alt_text as altText, m.caption, m.width, m.height
             FROM product_media pm
             JOIN media m ON pm.media_id = m.id
             WHERE pm.product_id = ? AND m.deleted_at IS NULL
@@ -233,6 +213,8 @@ export async function getPublishedProductBySlug(slug: string): Promise<Product |
           const galleryRes = await galleryStmt.all<{
             id: string
             key: string
+            storage_path: string | null
+            public_url: string | null
             altText: string | null
             caption: string | null
             width: number | null
@@ -241,7 +223,7 @@ export async function getPublishedProductBySlug(slug: string): Promise<Product |
           if (galleryRes.results) {
             gallery = galleryRes.results.map((g: any) => ({
               id: g.id,
-              url: resolveMediaUrl(g.key),
+              url: g.public_url || (g.storage_path ? getPublicUrl(g.storage_path) : resolveMediaUrl(g.key)),
               altText: g.altText ?? undefined,
               caption: g.caption ?? undefined,
               width: g.width ?? undefined,

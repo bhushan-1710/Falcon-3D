@@ -15,7 +15,8 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import { Navigation } from '@/components/Navigation'
 import { Footer } from '@/components/Footer'
-import { getPublishedProductBySlug, getPublishedProducts, buildProductWhatsAppUrl } from '@/lib/data/products'
+import { getPublishedProductBySlug, getPublishedProducts } from '@/lib/data/products'
+import { buildProductWhatsAppUrl } from '@/lib/products-utils'
 import { brand } from '@/lib/content'
 import type { Product } from '@/lib/types/products'
 
@@ -44,56 +45,7 @@ export async function generateMetadata(
   }
 }
 
-// ─── Gallery component ───────────────────────────────────────────────────────
-
-function Gallery({ product }: { product: Product }) {
-  const images = product.gallery.length > 0 ? product.gallery : product.featuredImage ? [product.featuredImage] : []
-
-  if (images.length === 0) {
-    return (
-      <div className="pd-gallery__placeholder" aria-label="Product image coming soon">
-        <span className="pd-gallery__placeholder-text">
-          ASSET REQUIRED
-        </span>
-      </div>
-    )
-  }
-
-  const [primary, ...thumbs] = images
-
-  return (
-    <div className="pd-gallery">
-      {/* Primary image */}
-      <div className="pd-gallery__primary">
-        <Image
-          src={primary.url}
-          alt={primary.altText ?? product.title}
-          fill
-          sizes="(max-width: 767px) 100vw, 55vw"
-          style={{ objectFit: 'cover' }}
-          priority
-        />
-      </div>
-
-      {/* Thumbnails */}
-      {thumbs.length > 0 && (
-        <div className="pd-gallery__thumbs" role="list" aria-label="Additional views">
-          {thumbs.map((img, i) => (
-            <div key={img.id} className="pd-gallery__thumb" role="listitem">
-              <Image
-                src={img.url}
-                alt={img.altText ?? `${product.title} view ${i + 2}`}
-                fill
-                sizes="180px"
-                style={{ objectFit: 'cover' }}
-              />
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-}
+import { ProductGallery } from '@/components/products/ProductGallery'
 
 // ─── Page ────────────────────────────────────────────────────────────────────
 
@@ -142,7 +94,7 @@ export default async function ProductDetailPage(
           <div className="pd-layout">
             {/* Left: Gallery */}
             <div className="pd-layout__media">
-              <Gallery product={product} />
+              <ProductGallery product={product} />
             </div>
 
             {/* Right: Details */}

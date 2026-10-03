@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDB, getMediaBucket } from '@/lib/cloudflare/context'
 import { verifyAdminRequest } from '@/lib/auth/guard'
 import { logActivity } from '@/lib/auth'
+import { getStorageConfig } from '@/lib/storage'
 
 export const dynamic = 'force-dynamic'
 
@@ -24,8 +25,8 @@ export async function GET(request: NextRequest) {
         d1Status = 'connected'
 
         const logs = await db.prepare(`
-          SELECT a.id, a.action, a.target_type, a.target_id, a.details, a.created_at, u.email as user_email
-          FROM audit_logs a
+          SELECT a.id, a.action, a.entity_type as target_type, a.entity_id as target_id, a.detail_json as details, a.created_at, u.email as user_email
+          FROM activity_log a
           LEFT JOIN users u ON a.user_id = u.id
           ORDER BY a.created_at DESC
           LIMIT 25
@@ -36,7 +37,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const r2Status = bucket ? 'connected' : 'unbound (local dev / simulated)'
+    const storageConfig = getStorageConfig()
+    const r2Status = storageConfig.isConfigured ? 'connected' : 'unbound (local dev / simulated)'
 
     // Fetch studio_settings from website_content if any
     let studioSettings: any = {
@@ -60,9 +62,11 @@ export async function GET(request: NextRequest) {
       system: {
         d1: d1Status,
         r2: r2Status,
+        database: d1Status,
+        storage: r2Status,
         users: userCount,
-        framework: 'Next.js 16 (React 19) on Cloudflare Workers',
-        adapter: '@opennextjs/cloudflare',
+        framework: 'Next.js 16 (React 19)',
+        adapter: 'Vercel + Turso + Supabase Storage',
       },
       settings: studioSettings,
       auditLogs,

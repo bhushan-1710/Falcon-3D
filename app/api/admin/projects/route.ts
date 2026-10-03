@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDB } from '@/lib/cloudflare/context'
 import { verifyAdminRequest } from '@/lib/auth/guard'
 import { logActivity } from '@/lib/auth'
+import { getPublicUrl } from '@/lib/storage'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,10 +31,11 @@ export async function GET(request: NextRequest) {
       SELECT p.id, p.slug, p.title, p.subtitle, p.status, p.is_featured,
              p.sort_order, p.category_id, p.featured_image_id, p.created_at, p.updated_at,
              c.name as category_name,
-             m.key as image_key, m.alt_text as image_alt
+             m.key as image_key, m.storage_path as image_storage_path, m.public_url as image_public_url,
+             m.alt_text as image_alt
       FROM projects p
       LEFT JOIN categories c ON p.category_id = c.id
-      LEFT JOIN media m ON p.featured_image_id = m.id
+      LEFT JOIN media m ON p.featured_image_id = m.id AND m.deleted_at IS NULL
       WHERE p.deleted_at IS NULL
     `
     const params: any[] = []
@@ -58,7 +60,7 @@ export async function GET(request: NextRequest) {
 
     const projects = (res.results || []).map((row: any) => ({
       ...row,
-      imageUrl: row.image_key ? `/api/media/${row.image_key}` : null,
+      imageUrl: row.image_public_url || (row.image_storage_path ? getPublicUrl(row.image_storage_path) : (row.image_key ? getPublicUrl(row.image_key) : null)),
       isFeatured: Boolean(row.is_featured),
     }))
 

@@ -1,11 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getDB, getMediaBucket } from '@/lib/cloudflare/context'
+import { getDB } from '@/lib/cloudflare/context'
+import { getPublicUrl, getStorageConfig } from '@/lib/storage'
+import fs from 'fs'
+import path from 'path'
 
 export const dynamic = 'force-dynamic'
 
 interface MediaRow {
   id: string
   key: string
+  storage_path: string | null
+  public_url: string | null
   mime_type: string
   size_bytes: number
   updated_at: number
@@ -22,89 +27,53 @@ export async function GET(
 
   const key = keyParts.join('/')
 
-  // 1. Verify existence in media table
+  // 1. Verify existence in media table if available
   const db = await getDB()
-  if (!db) {
-    return new NextResponse('Database Unavailable', { status: 503 })
+  let mediaRow: MediaRow | null = null
+
+  if (db) {
+    try {
+      const stmt = db.prepare(
+        'SELECT id, key, storage_path, public_url, mime_type, size_bytes, updated_at FROM media WHERE (key = ? OR storage_path = ?) AND deleted_at IS NULL'
+      ).bind(key, key)
+      mediaRow = await stmt.first<MediaRow>()
+    } catch {}
   }
 
-  const stmt = db.prepare(
-    'SELECT id, key, mime_type, size_bytes, updated_at FROM media WHERE key = ? AND deleted_at IS NULL'
-  ).bind(key)
-  const mediaRow = await stmt.first<MediaRow>()
-
-  if (!mediaRow) {
-    return new NextResponse('Not Found', { status: 404 })
+  // 2. If public_url is present, redirect to it
+  if (mediaRow?.public_url) {
+    return NextResponse.redirect(mediaRow.public_url, 307)
   }
 
-  const bucket = await getMediaBucket()
-  if (!bucket) {
-    return new NextResponse('Storage Unavailable', { status: 503 })
+  // 3. Build publicUrl via storage config
+  const storageConfig = getStorageConfig()
+  const storagePath = mediaRow?.storage_path || key
+  const publicUrl = getPublicUrl(storagePath)
+
+  if (publicUrl && publicUrl.startsWith('http')) {
+    return NextResponse.redirect(publicUrl, 307)
   }
 
-  // 2. Conditional request / ETag check
-  const ifNoneMatch = request.headers.get('if-none-match')
-  const etag = `"${mediaRow.id}-${mediaRow.updated_at}"`
+  // 4. Local filesystem fallback if storage is local disk
+  try {
+    const localDir = path.join(process.cwd(), '.storage', storageConfig.bucket)
+    const filePath = path.join(localDir, ...storagePath.split('/'))
+    if (fs.existsSync(filePath)) {
+      const stat = fs.statSync(filePath)
+      const fileBuffer = fs.readFileSync(filePath)
+      const mime = mediaRow?.mime_type || 'application/octet-stream'
 
-  if (ifNoneMatch && ifNoneMatch === etag) {
-    return new NextResponse(null, {
-      status: 304,
-      headers: {
-        'ETag': etag,
-        'Cache-Control': 'public, max-age=31536000, immutable',
-        'X-Content-Type-Options': 'nosniff',
-      },
-    })
-  }
-
-  // 3. Handle Range Requests
-  const rangeHeader = request.headers.get('range')
-  let rangeOption: { offset?: number; length?: number } | undefined
-
-  if (rangeHeader && rangeHeader.startsWith('bytes=')) {
-    const parts = rangeHeader.replace(/bytes=/, '').split('-')
-    const start = parseInt(parts[0], 10)
-    const end = parts[1] ? parseInt(parts[1], 10) : mediaRow.size_bytes - 1
-
-    if (!isNaN(start) && start < mediaRow.size_bytes) {
-      const length = end - start + 1
-      rangeOption = { offset: start, length }
-
-      const object = await bucket.get(key, { range: rangeOption })
-      if (!object) {
-        return new NextResponse('Object Not Found in Storage', { status: 404 })
-      }
-
-      return new NextResponse(object.body as unknown as BodyInit, {
-        status: 206,
+      return new NextResponse(fileBuffer, {
+        status: 200,
         headers: {
-          'Content-Type': mediaRow.mime_type,
-          'Content-Length': length.toString(),
-          'Content-Range': `bytes ${start}-${end}/${mediaRow.size_bytes}`,
-          'Accept-Ranges': 'bytes',
-          'ETag': etag,
+          'Content-Type': mime,
+          'Content-Length': stat.size.toString(),
           'Cache-Control': 'public, max-age=31536000, immutable',
           'X-Content-Type-Options': 'nosniff',
         },
       })
     }
-  }
+  } catch {}
 
-  // 4. Standard Full Response
-  const object = await bucket.get(key)
-  if (!object) {
-    return new NextResponse('Object Not Found in Storage', { status: 404 })
-  }
-
-  return new NextResponse(object.body as unknown as BodyInit, {
-    status: 200,
-    headers: {
-      'Content-Type': mediaRow.mime_type,
-      'Content-Length': mediaRow.size_bytes.toString(),
-      'Accept-Ranges': 'bytes',
-      'ETag': etag,
-      'Cache-Control': 'public, max-age=31536000, immutable',
-      'X-Content-Type-Options': 'nosniff',
-    },
-  })
+  return new NextResponse('Object Not Found in Storage', { status: 404 })
 }

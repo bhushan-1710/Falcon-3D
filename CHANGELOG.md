@@ -2,6 +2,29 @@
 
 > **File location**: repo root (`falcon-web/CHANGELOG.md`), not `docs/`.
 
+## [Product Page & Admin Dashboard Refinement] — 2026-10-04
+
+### Fixed & Refined
+- **Product Catalog Page (`/products`)**:
+  - Replaced static filter chips with fully interactive `ProductCatalogView` client component (`components/products/ProductCatalogView.tsx`), enabling instant client-side category filtering without page reloads.
+  - Added empty state handler when a filter category has zero products with direct action button to view all fabrication catalog items.
+  - Eliminated server/client hydration mismatch by isolating client-safe utilities in `lib/products-utils.ts` and synchronizing configured site URL between SSR and CSR.
+  - Resolved missing noise overlay asset (`public/textures/grain.png`), eliminating HTTP 404 console errors.
+- **Product Detail Page (`/products/[slug]`)**:
+  - Created interactive `ProductGallery` client component (`components/products/ProductGallery.tsx`), supporting thumbnail switching, active indicators, and graceful image error fallbacks.
+  - Fixed missing `Footer` import reference and ensured metadata and WhatsApp enquiry links resolve without exceptions.
+- **Supabase Storage Image Serving & Optimization**:
+  - Configured `images.remotePatterns` for `**.supabase.co` in `next.config.ts`.
+  - Added `dangerouslyAllowLocalIP: true` in `next.config.ts` to allow IPv6 / NAT64 loopback SSRF resolution for Next.js image optimization in local environments.
+  - Updated `lib/data/products.ts` and `lib/data/projects.ts` to select `storage_path` and `public_url` and map directly via `getPublicUrl()`, with soft-delete filter (`m.deleted_at IS NULL`).
+  - Updated legacy media proxy `app/api/media/[...key]/route.ts` to issue HTTP 307 temporary redirects to Supabase Storage public URLs.
+- **Admin Dashboard Studio Functions (`/admin/*`)**:
+  - Refined Overview dashboard (`app/admin/page.tsx`) copy and telemetry indicators to reflect Turso and Supabase Storage.
+  - Fixed `app/api/admin/settings/route.ts` audit query: replaced non-existent `audit_logs` table reference with `activity_log` and mapped `detail_json` column properly.
+  - Updated diagnostics endpoint to return verified `connected` status for database and storage.
+  - Updated product, project, and media admin API endpoints (`/api/admin/products`, `/api/admin/projects`, `/api/admin/media`) to select and return real Supabase public URLs, enabling instant previews in admin lists, editors, and the media picker.
+  - Tested and verified 100% pass rate across all 17 admin routes and API endpoints, including complete product lifecycle (create, read, update, archive, delete).
+
 ## [Vercel + Turso + Supabase Storage Amendment] — 2026-10-04
 
 ### Added & Configured

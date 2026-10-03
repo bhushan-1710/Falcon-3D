@@ -105,7 +105,7 @@ export default async function AdminDashboardPage() {
           Dashboard Overview
         </h1>
         <p style={{ fontSize: '13px', color: '#a1a1aa', margin: 0 }}>
-          Real-time metrics from Cloudflare D1 & R2
+          Real-time metrics from Turso & Supabase Storage
         </p>
       </div>
 
@@ -168,7 +168,7 @@ export default async function AdminDashboardPage() {
             {counts.mediaTotal}
           </div>
           <div style={{ fontSize: '12px', color: '#71717a' }}>
-            Objects stored in R2 Bucket
+            Objects stored in Supabase Storage
           </div>
         </div>
 
@@ -186,7 +186,7 @@ export default async function AdminDashboardPage() {
             {counts.videosTotal}
           </div>
           <div style={{ fontSize: '12px', color: '#71717a' }}>
-            R2 Hosted & External URLs
+            Supabase Hosted & External URLs
           </div>
         </div>
       </div>
@@ -262,7 +262,7 @@ export default async function AdminDashboardPage() {
                 fontWeight: 500,
               }}
             >
-              <span>🖼️ Upload Media to R2</span>
+              <span>🖼️ Upload Media to Supabase</span>
               <span style={{ color: '#71717a' }}>→</span>
             </Link>
             <Link

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getDB } from '@/lib/cloudflare/context'
 import { verifyAdminRequest } from '@/lib/auth/guard'
+import { getPublicUrl } from '@/lib/storage'
 
 export const dynamic = 'force-dynamic'
 
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
     const q = searchParams.get('q')
 
     let query = `
-      SELECT id, key, filename, mime_type, size_bytes, width, height, alt_text, caption, created_at
+      SELECT id, key, storage_path, public_url, filename, mime_type, size_bytes, width, height, alt_text, caption, created_at
       FROM media
       WHERE deleted_at IS NULL
     `
@@ -32,7 +33,7 @@ export async function GET(request: NextRequest) {
 
     const media = (res.results || []).map((m: any) => ({
       ...m,
-      url: `/api/media/${m.key}`,
+      url: m.public_url || (m.storage_path ? getPublicUrl(m.storage_path) : (m.key ? getPublicUrl(m.key) : null)),
     }))
 
     return NextResponse.json({ media })
