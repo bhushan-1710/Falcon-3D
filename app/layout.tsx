@@ -43,6 +43,7 @@ const dmMono = DM_Mono({
 
 // ─── Metadata ─────────────────────────────────────────────────────────────────
 export const metadata: Metadata = {
+  metadataBase: process.env.SITE_URL ? new URL(process.env.SITE_URL) : undefined,
   title: seo.title,
   description: seo.description,
   openGraph: {
