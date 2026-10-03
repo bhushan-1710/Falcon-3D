@@ -26,20 +26,13 @@ interface ActivityItem {
 
 export default async function AdminDashboardPage() {
   const auth = await getCurrentAuth()
-  if (!auth) {
-    redirect('/admin/login')
-  }
+  if (!auth) redirect('/admin/login')
 
   const db = await getDB()
   let counts: Counts = {
-    projectsTotal: 0,
-    projectsPublished: 0,
-    projectsDraft: 0,
-    productsTotal: 0,
-    productsPublished: 0,
-    productsDraft: 0,
-    mediaTotal: 0,
-    videosTotal: 0,
+    projectsTotal: 0, projectsPublished: 0, projectsDraft: 0,
+    productsTotal: 0, productsPublished: 0, productsDraft: 0,
+    mediaTotal: 0, videosTotal: 0,
   }
   let recentActivity: ActivityItem[] = []
 
@@ -87,249 +80,165 @@ export default async function AdminDashboardPage() {
 
       if (actRes.results) {
         recentActivity = actRes.results.map((r: any) => ({
-          id: r.id,
-          action: r.action,
-          entityType: r.entity_type,
-          entityId: r.entity_id,
-          createdAt: r.created_at,
+          id: r.id, action: r.action, entityType: r.entity_type,
+          entityId: r.entity_id, createdAt: r.created_at,
         }))
       }
     } catch {}
   }
 
+  const METRICS = [
+    {
+      label: 'Products',
+      value: counts.productsTotal,
+      sub: [
+        { label: 'Published', val: counts.productsPublished, cls: 'ag-badge-green' },
+        { label: 'Draft', val: counts.productsDraft, cls: 'ag-badge-yellow' },
+      ],
+    },
+    {
+      label: 'Projects',
+      value: counts.projectsTotal,
+      sub: [
+        { label: 'Published', val: counts.projectsPublished, cls: 'ag-badge-green' },
+        { label: 'Draft', val: counts.projectsDraft, cls: 'ag-badge-yellow' },
+      ],
+    },
+    {
+      label: 'Media Assets',
+      value: counts.mediaTotal,
+      sub: [{ label: 'Stored in Supabase', val: null, cls: '' }],
+    },
+    {
+      label: 'Videos',
+      value: counts.videosTotal,
+      sub: [{ label: 'Hosted & external', val: null, cls: '' }],
+    },
+  ]
+
+  const QUICK_ACTIONS = [
+    { label: '+ Create New Product', href: '/admin/products?action=new' },
+    { label: '+ Create Workshop Project', href: '/admin/projects?action=new' },
+    { label: 'Upload Media to Supabase', href: '/admin/media' },
+    { label: 'Edit Website Copy & CTAs', href: '/admin/content' },
+    { label: 'Manage Navigation Links', href: '/admin/navigation' },
+    { label: 'Studio Settings & System', href: '/admin/settings' },
+  ]
+
   return (
-    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '28px' }}>
-        <h1 style={{ fontSize: '24px', fontWeight: 600, color: '#fff', margin: '0 0 6px 0' }}>
-          Dashboard Overview
-        </h1>
-        <p style={{ fontSize: '13px', color: '#a1a1aa', margin: 0 }}>
-          Real-time metrics from Turso & Supabase Storage
-        </p>
-      </div>
-
-      {/* Metrics Grid */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-        gap: '16px',
-        marginBottom: '32px',
-      }}>
-        {/* Products Card */}
-        <div style={{
-          backgroundColor: '#141418',
-          border: '1px solid #27272a',
-          borderRadius: '8px',
-          padding: '20px',
-        }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Products
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#fff', margin: '10px 0 6px 0' }}>
-            {counts.productsTotal}
-          </div>
-          <div style={{ fontSize: '12px', color: '#71717a', display: 'flex', gap: '12px' }}>
-            <span><strong style={{ color: '#4ade80' }}>{counts.productsPublished}</strong> Published</span>
-            <span><strong style={{ color: '#facc15' }}>{counts.productsDraft}</strong> Draft</span>
-          </div>
-        </div>
-
-        {/* Projects Card */}
-        <div style={{
-          backgroundColor: '#141418',
-          border: '1px solid #27272a',
-          borderRadius: '8px',
-          padding: '20px',
-        }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Workshop Projects
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#fff', margin: '10px 0 6px 0' }}>
-            {counts.projectsTotal}
-          </div>
-          <div style={{ fontSize: '12px', color: '#71717a', display: 'flex', gap: '12px' }}>
-            <span><strong style={{ color: '#4ade80' }}>{counts.projectsPublished}</strong> Published</span>
-            <span><strong style={{ color: '#facc15' }}>{counts.projectsDraft}</strong> Draft</span>
-          </div>
-        </div>
-
-        {/* Media Card */}
-        <div style={{
-          backgroundColor: '#141418',
-          border: '1px solid #27272a',
-          borderRadius: '8px',
-          padding: '20px',
-        }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Media Library
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#fff', margin: '10px 0 6px 0' }}>
-            {counts.mediaTotal}
-          </div>
-          <div style={{ fontSize: '12px', color: '#71717a' }}>
-            Objects stored in Supabase Storage
-          </div>
-        </div>
-
-        {/* Videos Card */}
-        <div style={{
-          backgroundColor: '#141418',
-          border: '1px solid #27272a',
-          borderRadius: '8px',
-          padding: '20px',
-        }}>
-          <div style={{ fontSize: '12px', fontWeight: 600, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            Video Demonstrations
-          </div>
-          <div style={{ fontSize: '32px', fontWeight: 700, color: '#fff', margin: '10px 0 6px 0' }}>
-            {counts.videosTotal}
-          </div>
-          <div style={{ fontSize: '12px', color: '#71717a' }}>
-            Supabase Hosted & External URLs
-          </div>
+    <>
+      {/* Page header */}
+      <div className="ag-page-header">
+        <div>
+          <h1 className="ag-page-title">Dashboard</h1>
+          <p className="ag-page-sub">Overview · Turso DB + Supabase Storage</p>
         </div>
       </div>
 
-      {/* Quick Actions & Recent Activity */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '24px',
-      }}>
-        {/* Quick Actions */}
-        <div style={{
-          backgroundColor: '#141418',
-          border: '1px solid #27272a',
-          borderRadius: '8px',
-          padding: '20px',
-        }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#fff', margin: '0 0 16px 0' }}>
-            Quick Actions
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-            <Link
-              href="/admin/products?action=new"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 14px',
-                backgroundColor: '#1e1e24',
-                border: '1px solid #2e2e36',
-                borderRadius: '6px',
-                color: '#fff',
-                textDecoration: 'none',
-                fontSize: '13px',
-                fontWeight: 500,
-              }}
-            >
-              <span>+ Create New Product</span>
-              <span style={{ color: '#71717a' }}>→</span>
-            </Link>
-            <Link
-              href="/admin/projects?action=new"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 14px',
-                backgroundColor: '#1e1e24',
-                border: '1px solid #2e2e36',
-                borderRadius: '6px',
-                color: '#fff',
-                textDecoration: 'none',
-                fontSize: '13px',
-                fontWeight: 500,
-              }}
-            >
-              <span>+ Create Workshop Project</span>
-              <span style={{ color: '#71717a' }}>→</span>
-            </Link>
-            <Link
-              href="/admin/media"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 14px',
-                backgroundColor: '#1e1e24',
-                border: '1px solid #2e2e36',
-                borderRadius: '6px',
-                color: '#fff',
-                textDecoration: 'none',
-                fontSize: '13px',
-                fontWeight: 500,
-              }}
-            >
-              <span>🖼️ Upload Media to Supabase</span>
-              <span style={{ color: '#71717a' }}>→</span>
-            </Link>
-            <Link
-              href="/admin/content"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '12px 14px',
-                backgroundColor: '#1e1e24',
-                border: '1px solid #2e2e36',
-                borderRadius: '6px',
-                color: '#fff',
-                textDecoration: 'none',
-                fontSize: '13px',
-                fontWeight: 500,
-              }}
-            >
-              <span>📝 Edit Website Copy & CTAs</span>
-              <span style={{ color: '#71717a' }}>→</span>
-            </Link>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div style={{
-          backgroundColor: '#141418',
-          border: '1px solid #27272a',
-          borderRadius: '8px',
-          padding: '20px',
-        }}>
-          <h2 style={{ fontSize: '16px', fontWeight: 600, color: '#fff', margin: '0 0 16px 0' }}>
-            Recent Activity
-          </h2>
-          {recentActivity.length === 0 ? (
-            <div style={{ padding: '24px 0', textAlign: 'center', color: '#71717a', fontSize: '13px' }}>
-              No recorded activity yet.
+      {/* Metrics grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '28px' }}>
+        {METRICS.map((m) => (
+          <div key={m.label} className="ag-card" style={{ padding: '18px 20px' }}>
+            <div style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#52525b', marginBottom: '10px' }}>
+              {m.label}
             </div>
+            <div style={{ fontSize: '36px', fontWeight: 700, color: '#f4f4f5', lineHeight: 1, marginBottom: '10px' }}>
+              {m.value}
+            </div>
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              {m.sub.map((s, i) =>
+                s.val !== null ? (
+                  <span key={i} className={`ag-badge ${s.cls}`}>
+                    {s.val} {s.label}
+                  </span>
+                ) : (
+                  <span key={i} style={{ fontSize: '11px', color: '#3f3f46' }}>{s.label}</span>
+                )
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Bottom 2-col */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '20px' }}>
+        {/* Quick actions */}
+        <div className="ag-card" style={{ padding: '20px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '14px' }}>
+            Quick Actions
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {QUICK_ACTIONS.map((a) => (
+              <Link
+                key={a.href}
+                href={a.href}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  padding: '10px 14px',
+                  background: '#18181b',
+                  border: '1px solid #27272a',
+                  borderRadius: '8px',
+                  color: '#d4d4d8',
+                  textDecoration: 'none',
+                  fontSize: '13px',
+                  fontWeight: 500,
+                  transition: 'background 0.13s, border-color 0.13s',
+                }}
+                className="ag-quick-link"
+              >
+                <span>{a.label}</span>
+                <span style={{ color: '#3f3f46', fontSize: '16px' }}>›</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent activity */}
+        <div className="ag-card" style={{ padding: '20px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '14px' }}>
+            Recent Activity
+          </div>
+          {recentActivity.length === 0 ? (
+            <div className="ag-empty" style={{ padding: '24px 0' }}>No recorded activity yet.</div>
           ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-              {recentActivity.map((act) => (
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              {recentActivity.map((act, i) => (
                 <div
                   key={act.id}
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '8px 0',
-                    borderBottom: '1px solid #27272a',
-                    fontSize: '12px',
+                    padding: '9px 0',
+                    borderBottom: i < recentActivity.length - 1 ? '1px solid #18181b' : 'none',
+                    gap: '12px',
                   }}
                 >
-                  <div>
-                    <span style={{ color: '#e4e4e7', fontWeight: 500 }}>{act.action}</span>
+                  <div style={{ minWidth: 0 }}>
+                    <span style={{ fontSize: '13px', color: '#d4d4d8', fontWeight: 500 }}>{act.action}</span>
                     {act.entityType && (
-                      <span style={{ color: '#71717a', marginLeft: '6px' }}>({act.entityType})</span>
+                      <span style={{ fontSize: '11px', color: '#3f3f46', marginLeft: '6px' }}>({act.entityType})</span>
                     )}
                   </div>
-                  <div style={{ color: '#52525b', fontSize: '11px' }}>
+                  <span style={{ fontSize: '11px', color: '#3f3f46', flexShrink: 0 }}>
                     {new Date(act.createdAt * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                  </div>
+                  </span>
                 </div>
               ))}
             </div>
           )}
         </div>
       </div>
-    </div>
+
+      <style>{`
+        .ag-quick-link:hover {
+          background: #222226 !important;
+          border-color: #3f3f46 !important;
+          color: #f4f4f5 !important;
+        }
+      `}</style>
+    </>
   )
 }

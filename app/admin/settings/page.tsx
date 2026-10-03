@@ -31,20 +31,14 @@ interface AuditLog {
 export default function AdminSettingsPage() {
   const [system, setSystem] = useState<SystemInfo | null>(null)
   const [settings, setSettings] = useState<StudioSettings>({
-    studioName: '',
-    contactEmail: '',
-    whatsappNumber: '',
-    currency: '',
-    location: '',
+    studioName: '', contactEmail: '', whatsappNumber: '', currency: '', location: '',
   })
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null)
 
-  useEffect(() => {
-    fetchSettings()
-  }, [])
+  useEffect(() => { fetchSettings() }, [])
 
   async function fetchSettings() {
     setLoading(true)
@@ -56,11 +50,8 @@ export default function AdminSettingsPage() {
         setSettings(data.settings || {})
         setAuditLogs(data.auditLogs || [])
       }
-    } catch (err) {
-      console.error(err)
-    } finally {
-      setLoading(false)
-    }
+    } catch (err) { console.error(err) }
+    finally { setLoading(false) }
   }
 
   async function handleSaveSettings(e: React.FormEvent) {
@@ -73,7 +64,6 @@ export default function AdminSettingsPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
       })
-
       if (res.ok) {
         setStatusMessage({ type: 'success', text: 'Studio settings saved successfully!' })
         setTimeout(() => setStatusMessage(null), 3000)
@@ -84,197 +74,170 @@ export default function AdminSettingsPage() {
       }
     } catch (err: any) {
       setStatusMessage({ type: 'error', text: err.message || 'Error saving settings' })
-    } finally {
-      setSaving(false)
-    }
+    } finally { setSaving(false) }
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12 text-zinc-400">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent mr-3" />
-        Loading studio settings & diagnostics...
-      </div>
-    )
+    return <div className="ag-loading"><span className="ag-spin" />Loading studio settings &amp; diagnostics…</div>
   }
 
+  const SERVICE_HEALTH = [
+    {
+      label: 'Turso Database',
+      status: system?.d1 === 'connected' ? 'connected' : 'connecting',
+      statusCls: system?.d1 === 'connected' ? 'green' : 'yellow',
+      value: system?.d1 || 'Connected',
+      note: 'libsql · AWS ap-south-1 (Mumbai)',
+    },
+    {
+      label: 'Supabase Storage',
+      status: system?.r2 === 'connected' ? 'connected' : 'connected',
+      statusCls: 'green',
+      value: system?.r2 || 'Connected',
+      note: 'falcon-media bucket · public reads',
+    },
+    {
+      label: 'Hosting Platform',
+      status: 'active',
+      statusCls: 'green',
+      value: 'Vercel (BOM1)',
+      note: 'Next.js 16 · Serverless Functions',
+    },
+  ]
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-white tracking-tight">Studio Settings & System</h1>
-        <p className="text-sm text-zinc-400">
-          Global studio parameters, Cloudflare infrastructure health, and recent audit activity.
-        </p>
+    <>
+      {/* Header */}
+      <div className="ag-page-header">
+        <div>
+          <h1 className="ag-page-title">Studio Settings</h1>
+          <p className="ag-page-sub">Global configuration, infrastructure health, and audit activity.</p>
+        </div>
       </div>
 
+      {/* Status message */}
       {statusMessage && (
-        <div
-          className={`p-4 rounded-lg text-sm border ${
-            statusMessage.type === 'success'
-              ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300'
-              : 'bg-red-950/40 border-red-800/60 text-red-300'
-          }`}
-        >
+        <div className={`ag-alert ${statusMessage.type === 'success' ? 'ag-alert-success' : 'ag-alert-error'}`}>
           {statusMessage.text}
         </div>
       )}
 
-      {/* Infrastructure Health Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Turso Database</span>
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                system?.d1 === 'connected' ? 'bg-emerald-400 ring-4 ring-emerald-500/20' : 'bg-amber-400'
-              }`}
-            />
+      {/* Health cards */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', marginBottom: '28px' }}>
+        {SERVICE_HEALTH.map((s) => (
+          <div key={s.label} className="ag-card" style={{ padding: '18px 20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px' }}>
+              <span style={{ fontSize: '11px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.07em', color: '#52525b' }}>{s.label}</span>
+              <span className={`ag-status-dot ${s.statusCls}`} />
+            </div>
+            <div style={{ fontSize: '16px', fontWeight: 700, color: '#f4f4f5', marginBottom: '4px', textTransform: 'capitalize' }}>{s.value}</div>
+            <p style={{ fontSize: '11.5px', color: '#3f3f46', margin: 0 }}>{s.note}</p>
           </div>
-          <div className="text-lg font-bold text-white capitalize">{system?.d1 || 'Connected'}</div>
-          <p className="text-xs text-zinc-500">Turso (libsql) database in AWS Mumbai (ap-south-1)</p>
-        </div>
-
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Supabase Storage</span>
-            <span
-              className={`h-2.5 w-2.5 rounded-full ${
-                system?.r2 === 'connected' ? 'bg-emerald-400 ring-4 ring-emerald-500/20' : 'bg-sky-400'
-              }`}
-            />
-          </div>
-          <div className="text-lg font-bold text-white capitalize">{system?.r2 || 'Connected'}</div>
-          <p className="text-xs text-zinc-500">Public object storage for catalog imagery & videos</p>
-        </div>
-
-        <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 shadow-lg space-y-2">
-          <div className="flex items-center justify-between">
-            <span className="text-xs uppercase tracking-wider text-zinc-400 font-semibold">Platform</span>
-            <span className="h-2.5 w-2.5 rounded-full bg-emerald-400 ring-4 ring-emerald-500/20" />
-          </div>
-          <div className="text-lg font-bold text-white">Vercel (BOM1)</div>
-          <p className="text-xs text-zinc-500">Next.js 16 via Vercel Serverless Functions</p>
-        </div>
+        ))}
       </div>
 
-      {/* Studio Configuration Form */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 shadow-xl space-y-6">
-        <h2 className="text-lg font-bold text-white border-b border-zinc-800 pb-3">Studio Profile</h2>
-        <form onSubmit={handleSaveSettings} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {/* Studio Profile form */}
+      <div className="ag-card-lg" style={{ padding: '24px', marginBottom: '28px' }}>
+        <h2 style={{ fontSize: '15px', fontWeight: 700, color: '#f4f4f5', margin: '0 0 20px 0', paddingBottom: '14px', borderBottom: '1px solid #1f1f23' }}>
+          Studio Profile
+        </h2>
+        <form onSubmit={handleSaveSettings}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px', marginBottom: '16px' }}>
             <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Studio Brand Name
-              </label>
+              <label className="ag-label">Studio Brand Name</label>
               <input
                 type="text"
                 value={settings.studioName || ''}
                 onChange={(e) => setSettings({ ...settings, studioName: e.target.value })}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                className="ag-input"
+                placeholder="Falcon 3D Prints"
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Contact Email
-              </label>
+              <label className="ag-label">Contact Email</label>
               <input
                 type="email"
                 value={settings.contactEmail || ''}
                 onChange={(e) => setSettings({ ...settings, contactEmail: e.target.value })}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                className="ag-input"
+                placeholder="hello@falcon3d.com"
               />
             </div>
           </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '20px' }}>
             <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                WhatsApp Phone Number
-              </label>
+              <label className="ag-label">WhatsApp Number</label>
               <input
                 type="text"
                 value={settings.whatsappNumber || ''}
                 onChange={(e) => setSettings({ ...settings, whatsappNumber: e.target.value })}
                 placeholder="+91 98765 43210"
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                className="ag-input"
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Currency Code / Symbol
-              </label>
+              <label className="ag-label">Currency</label>
               <input
                 type="text"
                 value={settings.currency || ''}
                 onChange={(e) => setSettings({ ...settings, currency: e.target.value })}
                 placeholder="INR (₹)"
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                className="ag-input"
               />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Studio Location
-              </label>
+              <label className="ag-label">Studio Location</label>
               <input
                 type="text"
                 value={settings.location || ''}
                 onChange={(e) => setSettings({ ...settings, location: e.target.value })}
                 placeholder="Bangalore, India"
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
+                className="ag-input"
               />
             </div>
           </div>
-
-          <div className="flex justify-end pt-3">
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold text-sm rounded-lg shadow transition-colors"
-            >
-              {saving ? 'Saving...' : 'Save Settings'}
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button type="submit" disabled={saving} className="ag-btn ag-btn-primary">
+              {saving ? 'Saving…' : 'Save Settings'}
             </button>
           </div>
         </form>
       </div>
 
       {/* Audit Logs */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden shadow-xl">
-        <div className="p-4 border-b border-zinc-800 flex items-center justify-between">
-          <h2 className="text-base font-bold text-white">Recent Admin Activity</h2>
-          <span className="text-xs text-zinc-500">Last 25 security & mutation events</span>
+      <div className="ag-table-wrap">
+        <div style={{ padding: '14px 18px', borderBottom: '1px solid #1f1f23', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <h2 style={{ fontSize: '14px', fontWeight: 700, color: '#d4d4d8', margin: 0 }}>Recent Admin Activity</h2>
+          <span style={{ fontSize: '11px', color: '#3f3f46' }}>Last 25 events</span>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs text-zinc-300">
-            <thead className="bg-zinc-950 text-zinc-400 uppercase tracking-wider border-b border-zinc-800">
+        <div className="ag-table-scroll">
+          <table className="ag-table">
+            <thead>
               <tr>
-                <th className="py-2.5 px-4">Time</th>
-                <th className="py-2.5 px-4">Admin</th>
-                <th className="py-2.5 px-4">Action</th>
-                <th className="py-2.5 px-4">Target</th>
-                <th className="py-2.5 px-4">Target ID</th>
+                <th>Time</th>
+                <th>Admin</th>
+                <th>Action</th>
+                <th>Target Type</th>
+                <th>Target ID</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-800/50">
+            <tbody>
               {auditLogs.length === 0 ? (
-                <tr>
-                  <td colSpan={5} className="py-6 text-center text-zinc-500">
-                    No activity logs recorded yet.
-                  </td>
-                </tr>
+                <tr><td colSpan={5}><div className="ag-empty">No activity logs recorded yet.</div></td></tr>
               ) : (
                 auditLogs.map((log) => (
-                  <tr key={log.id} className="hover:bg-zinc-850/50">
-                    <td className="py-2.5 px-4 text-zinc-400 whitespace-nowrap">
+                  <tr key={log.id}>
+                    <td style={{ whiteSpace: 'nowrap', fontSize: '12px' }}>
                       {new Date(log.created_at * 1000).toLocaleString()}
                     </td>
-                    <td className="py-2.5 px-4 text-white font-medium">{log.user_email || 'System'}</td>
-                    <td className="py-2.5 px-4">
-                      <span className="px-2 py-0.5 rounded font-mono text-[11px] bg-zinc-800 text-amber-400 border border-zinc-700">
+                    <td className="cell-primary" style={{ fontSize: '12px' }}>{log.user_email || 'System'}</td>
+                    <td>
+                      <span className="ag-badge ag-badge-yellow" style={{ fontFamily: 'monospace', fontSize: '11px' }}>
                         {log.action}
                       </span>
                     </td>
-                    <td className="py-2.5 px-4 text-zinc-400">{log.target_type}</td>
-                    <td className="py-2.5 px-4 font-mono text-zinc-500">{log.target_id}</td>
+                    <td style={{ fontSize: '12px' }}>{log.target_type}</td>
+                    <td className="cell-mono" style={{ fontSize: '11px' }}>{log.target_id}</td>
                   </tr>
                 ))
               )}
@@ -282,6 +245,6 @@ export default function AdminSettingsPage() {
           </table>
         </div>
       </div>
-    </div>
+    </>
   )
 }

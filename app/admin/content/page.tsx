@@ -84,400 +84,147 @@ export default function AdminContentPage() {
   }
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-12 text-zinc-400">
-        <div className="h-6 w-6 animate-spin rounded-full border-2 border-amber-500 border-t-transparent mr-3" />
-        Loading website content...
-      </div>
-    )
+    return <div className="ag-loading"><span className="ag-spin" />Loading website content…</div>
   }
 
   const currentData = sections[activeTab] || defaults[activeTab] || {}
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+    <>
+      {/* Header */}
+      <div className="ag-page-header">
         <div>
-          <h1 className="text-2xl font-bold text-white tracking-tight">Website Content</h1>
-          <p className="text-sm text-zinc-400">
-            Edit live website copy. Changes appear directly on public pages or fall back to defaults safely.
-          </p>
+          <h1 className="ag-page-title">Website Content</h1>
+          <p className="ag-page-sub">Edit live copy. Changes appear on public pages or fall back to defaults safely.</p>
         </div>
       </div>
 
       {statusMessage && (
-        <div
-          className={`p-4 rounded-lg text-sm border ${
-            statusMessage.type === 'success'
-              ? 'bg-emerald-950/40 border-emerald-800/60 text-emerald-300'
-              : 'bg-red-950/40 border-red-800/60 text-red-300'
-          }`}
-        >
+        <div className={`ag-alert ${statusMessage.type === 'success' ? 'ag-alert-success' : 'ag-alert-error'}`}>
           {statusMessage.text}
         </div>
       )}
 
       {/* Tabs */}
-      <div className="flex flex-wrap gap-2 border-b border-zinc-800 pb-3">
+      <div className="ag-tabs">
         {[
-          { key: 'hero', label: 'Hero Section' },
+          { key: 'hero', label: 'Hero' },
           { key: 'process', label: 'Process' },
-          { key: 'about', label: 'About & Philosophy' },
-          { key: 'contact', label: 'Contact / Final CTA' },
+          { key: 'about', label: 'About' },
+          { key: 'contact', label: 'Contact CTA' },
           { key: 'products_page', label: 'Products Page' },
         ].map((tab) => (
-          <button
-            key={tab.key}
-            onClick={() => setActiveTab(tab.key as any)}
-            className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-              activeTab === tab.key
-                ? 'bg-amber-500 text-black shadow'
-                : 'text-zinc-400 hover:text-white hover:bg-zinc-850 bg-zinc-900 border border-zinc-800'
-            }`}
-          >
+          <button key={tab.key} onClick={() => setActiveTab(tab.key as any)} className={`ag-tab ${activeTab === tab.key ? 'active' : ''}`}>
             {tab.label}
           </button>
         ))}
       </div>
 
       {/* Tab Form */}
-      <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 space-y-6 shadow-xl">
+      <div className="ag-card-lg" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {activeTab === 'hero' && (
-          <div className="space-y-4">
+          <>
             <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Headline (H1)
-              </label>
-              <input
-                type="text"
-                value={currentData.h1 || ''}
-                onChange={(e) => handleFieldChange('hero', 'h1', e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
+              <label className="ag-label">Headline (H1)</label>
+              <input type="text" value={currentData.h1 || ''} onChange={(e) => handleFieldChange('hero', 'h1', e.target.value)} className="ag-input" />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Support Line
-              </label>
-              <textarea
-                rows={2}
-                value={currentData.supportLine || ''}
-                onChange={(e) => handleFieldChange('hero', 'supportLine', e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
+              <label className="ag-label">Support Line</label>
+              <textarea rows={2} value={currentData.supportLine || ''} onChange={(e) => handleFieldChange('hero', 'supportLine', e.target.value)} className="ag-input" style={{ resize: 'vertical' }} />
             </div>
             <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Secondary Line
-              </label>
-              <input
-                type="text"
-                value={currentData.secondaryLine || ''}
-                onChange={(e) => handleFieldChange('hero', 'secondaryLine', e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
+              <label className="ag-label">Secondary Line</label>
+              <input type="text" value={currentData.secondaryLine || ''} onChange={(e) => handleFieldChange('hero', 'secondaryLine', e.target.value)} className="ag-input" />
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
               <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  Primary Button Text
-                </label>
-                <input
-                  type="text"
-                  value={currentData.ctaPrimary || ''}
-                  onChange={(e) => handleFieldChange('hero', 'ctaPrimary', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
+                <label className="ag-label">Primary Button Text</label>
+                <input type="text" value={currentData.ctaPrimary || ''} onChange={(e) => handleFieldChange('hero', 'ctaPrimary', e.target.value)} className="ag-input" />
               </div>
               <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  Secondary Button Text
-                </label>
-                <input
-                  type="text"
-                  value={currentData.ctaSecondary || ''}
-                  onChange={(e) => handleFieldChange('hero', 'ctaSecondary', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
+                <label className="ag-label">Secondary Button Text</label>
+                <input type="text" value={currentData.ctaSecondary || ''} onChange={(e) => handleFieldChange('hero', 'ctaSecondary', e.target.value)} className="ag-input" />
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {activeTab === 'process' && (
-          <div className="space-y-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
               <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  Section Heading
-                </label>
-                <input
-                  type="text"
-                  value={currentData.heading || ''}
-                  onChange={(e) => handleFieldChange('process', 'heading', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
+                <label className="ag-label">Section Heading</label>
+                <input type="text" value={currentData.heading || ''} onChange={(e) => handleFieldChange('process', 'heading', e.target.value)} className="ag-input" />
               </div>
               <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  Turnaround Highlight
-                </label>
-                <input
-                  type="text"
-                  value={currentData.turnaround || ''}
-                  onChange={(e) => handleFieldChange('process', 'turnaround', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
+                <label className="ag-label">Turnaround Highlight</label>
+                <input type="text" value={currentData.turnaround || ''} onChange={(e) => handleFieldChange('process', 'turnaround', e.target.value)} className="ag-input" />
               </div>
             </div>
-
             <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-3">
-                Process Stages
-              </label>
-              <div className="space-y-4">
+              <label className="ag-label" style={{ marginBottom: '12px' }}>Process Stages</label>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {(currentData.stages || []).map((stage: any, idx: number) => (
-                  <div key={idx} className="p-4 bg-zinc-950 border border-zinc-800/80 rounded-lg space-y-2">
-                    <span className="text-xs font-mono text-amber-500">Stage {idx + 1}</span>
-                    <input
-                      type="text"
-                      placeholder="Title"
-                      value={stage.title || ''}
-                      onChange={(e) => handleStageChange(idx, 'title', e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                    />
-                    <textarea
-                      placeholder="Description"
-                      rows={2}
-                      value={stage.description || ''}
-                      onChange={(e) => handleStageChange(idx, 'description', e.target.value)}
-                      className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                    />
+                  <div key={idx} style={{ padding: '14px 16px', background: '#0d0d10', border: '1px solid #1f1f23', borderRadius: '8px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                    <span style={{ fontSize: '11px', fontFamily: 'monospace', color: '#f59e0b', fontWeight: 600 }}>Stage {idx + 1}</span>
+                    <input type="text" placeholder="Title" value={stage.title || ''} onChange={(e) => handleStageChange(idx, 'title', e.target.value)} className="ag-input" />
+                    <textarea placeholder="Description" rows={2} value={stage.description || ''} onChange={(e) => handleStageChange(idx, 'description', e.target.value)} className="ag-input" style={{ resize: 'vertical' }} />
                   </div>
                 ))}
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {activeTab === 'about' && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Heading
-              </label>
-              <input
-                type="text"
-                value={currentData.heading || ''}
-                onChange={(e) => handleFieldChange('about', 'heading', e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
+          <>
+            <div><label className="ag-label">Heading</label><input type="text" value={currentData.heading || ''} onChange={(e) => handleFieldChange('about', 'heading', e.target.value)} className="ag-input" /></div>
+            <div><label className="ag-label">Kinetic Eyebrow / Subline</label><input type="text" value={currentData.kinetic || ''} onChange={(e) => handleFieldChange('about', 'kinetic', e.target.value)} className="ag-input" /></div>
+            <div><label className="ag-label">Philosophy Body Text</label><textarea rows={4} value={currentData.body || ''} onChange={(e) => handleFieldChange('about', 'body', e.target.value)} className="ag-input" style={{ resize: 'vertical' }} /></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+              <div><label className="ag-label">Owner / Sign-off Name</label><input type="text" value={currentData.ownerName || ''} onChange={(e) => handleFieldChange('about', 'ownerName', e.target.value)} className="ag-input" /></div>
+              <div><label className="ag-label">Owner Title</label><input type="text" value={currentData.ownerTitle || ''} onChange={(e) => handleFieldChange('about', 'ownerTitle', e.target.value)} className="ag-input" /></div>
             </div>
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Kinetic Eyebrow / Subline
-              </label>
-              <input
-                type="text"
-                value={currentData.kinetic || ''}
-                onChange={(e) => handleFieldChange('about', 'kinetic', e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Philosophy Body Text
-              </label>
-              <textarea
-                rows={4}
-                value={currentData.body || ''}
-                onChange={(e) => handleFieldChange('about', 'body', e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  Owner / Sign-off Name
-                </label>
-                <input
-                  type="text"
-                  value={currentData.ownerName || ''}
-                  onChange={(e) => handleFieldChange('about', 'ownerName', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  Owner Title
-                </label>
-                <input
-                  type="text"
-                  value={currentData.ownerTitle || ''}
-                  onChange={(e) => handleFieldChange('about', 'ownerTitle', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-            </div>
-          </div>
+          </>
         )}
 
         {activeTab === 'contact' && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Section Heading
-              </label>
-              <input
-                type="text"
-                value={currentData.heading || ''}
-                onChange={(e) => handleFieldChange('contact', 'heading', e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
+          <>
+            <div><label className="ag-label">Section Heading</label><input type="text" value={currentData.heading || ''} onChange={(e) => handleFieldChange('contact', 'heading', e.target.value)} className="ag-input" /></div>
+            <div><label className="ag-label">Supporting Copy</label><textarea rows={3} value={currentData.supportingCopy || ''} onChange={(e) => handleFieldChange('contact', 'supportingCopy', e.target.value)} className="ag-input" style={{ resize: 'vertical' }} /></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+              <div><label className="ag-label">Primary CTA Text</label><input type="text" value={currentData.ctaPrimary || ''} onChange={(e) => handleFieldChange('contact', 'ctaPrimary', e.target.value)} className="ag-input" /></div>
+              <div><label className="ag-label">WhatsApp CTA Text</label><input type="text" value={currentData.ctaWhatsapp || ''} onChange={(e) => handleFieldChange('contact', 'ctaWhatsapp', e.target.value)} className="ag-input" /></div>
             </div>
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Supporting Copy
-              </label>
-              <textarea
-                rows={3}
-                value={currentData.supportingCopy || ''}
-                onChange={(e) => handleFieldChange('contact', 'supportingCopy', e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  Primary CTA Text
-                </label>
-                <input
-                  type="text"
-                  value={currentData.ctaPrimary || ''}
-                  onChange={(e) => handleFieldChange('contact', 'ctaPrimary', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  WhatsApp CTA Text
-                </label>
-                <input
-                  type="text"
-                  value={currentData.ctaWhatsapp || ''}
-                  onChange={(e) => handleFieldChange('contact', 'ctaWhatsapp', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-            </div>
-          </div>
+          </>
         )}
 
         {activeTab === 'products_page' && (
-          <div className="space-y-4">
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Hero Eyebrow
-              </label>
-              <input
-                type="text"
-                value={currentData.heroEyebrow || ''}
-                onChange={(e) => handleFieldChange('products_page', 'heroEyebrow', e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
+          <>
+            <div><label className="ag-label">Hero Eyebrow</label><input type="text" value={currentData.heroEyebrow || ''} onChange={(e) => handleFieldChange('products_page', 'heroEyebrow', e.target.value)} className="ag-input" /></div>
+            <div><label className="ag-label">Hero Headline</label><input type="text" value={currentData.heroHeadline || ''} onChange={(e) => handleFieldChange('products_page', 'heroHeadline', e.target.value)} className="ag-input" /></div>
+            <div><label className="ag-label">Hero Subline</label><textarea rows={2} value={currentData.heroSubline || ''} onChange={(e) => handleFieldChange('products_page', 'heroSubline', e.target.value)} className="ag-input" style={{ resize: 'vertical' }} /></div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+              <div><label className="ag-label">Enquire CTA Button</label><input type="text" value={currentData.ctaEnquire || ''} onChange={(e) => handleFieldChange('products_page', 'ctaEnquire', e.target.value)} className="ag-input" /></div>
+              <div><label className="ag-label">Custom Build CTA Button</label><input type="text" value={currentData.ctaCustom || ''} onChange={(e) => handleFieldChange('products_page', 'ctaCustom', e.target.value)} className="ag-input" /></div>
             </div>
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Hero Headline
-              </label>
-              <input
-                type="text"
-                value={currentData.heroHeadline || ''}
-                onChange={(e) => handleFieldChange('products_page', 'heroHeadline', e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px', paddingTop: '12px', borderTop: '1px solid #1f1f23' }}>
+              <div><label className="ag-label">Empty Catalog Title</label><input type="text" value={currentData.emptyTitle || ''} onChange={(e) => handleFieldChange('products_page', 'emptyTitle', e.target.value)} className="ag-input" /></div>
+              <div><label className="ag-label">Empty Catalog Text</label><input type="text" value={currentData.emptyText || ''} onChange={(e) => handleFieldChange('products_page', 'emptyText', e.target.value)} className="ag-input" /></div>
             </div>
-            <div>
-              <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                Hero Subline
-              </label>
-              <textarea
-                rows={2}
-                value={currentData.heroSubline || ''}
-                onChange={(e) => handleFieldChange('products_page', 'heroSubline', e.target.value)}
-                className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-              />
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  Enquire CTA Button
-                </label>
-                <input
-                  type="text"
-                  value={currentData.ctaEnquire || ''}
-                  onChange={(e) => handleFieldChange('products_page', 'ctaEnquire', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  Custom Build CTA Button
-                </label>
-                <input
-                  type="text"
-                  value={currentData.ctaCustom || ''}
-                  onChange={(e) => handleFieldChange('products_page', 'ctaCustom', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-zinc-800">
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  Empty Catalog Title
-                </label>
-                <input
-                  type="text"
-                  value={currentData.emptyTitle || ''}
-                  onChange={(e) => handleFieldChange('products_page', 'emptyTitle', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-              <div>
-                <label className="block text-xs uppercase tracking-wider text-zinc-400 font-semibold mb-1">
-                  Empty Catalog Text
-                </label>
-                <input
-                  type="text"
-                  value={currentData.emptyText || ''}
-                  onChange={(e) => handleFieldChange('products_page', 'emptyText', e.target.value)}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
-                />
-              </div>
-            </div>
-          </div>
+          </>
         )}
 
         {/* Action Buttons */}
-        <div className="flex items-center justify-between pt-4 border-t border-zinc-800">
-          <button
-            type="button"
-            onClick={() => handleReset(activeTab)}
-            className="px-4 py-2 text-sm text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
-          >
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingTop: '14px', borderTop: '1px solid #1f1f23' }}>
+          <button type="button" onClick={() => handleReset(activeTab)} className="ag-btn ag-btn-ghost">
             Reset to Defaults
           </button>
-          <button
-            type="button"
-            disabled={saving}
-            onClick={() => handleSave(activeTab)}
-            className="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-black font-semibold rounded-lg shadow transition-colors flex items-center gap-2"
-          >
-            {saving ? 'Saving...' : 'Save Changes'}
+          <button type="button" disabled={saving} onClick={() => handleSave(activeTab)} className="ag-btn ag-btn-primary">
+            {saving ? 'Saving…' : 'Save Changes'}
           </button>
         </div>
       </div>
-    </div>
+    </>
   )
 }
