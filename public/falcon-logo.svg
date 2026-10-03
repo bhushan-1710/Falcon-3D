@@ -1,0 +1,10 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Falcon 3D Prints Geometric Brand Mark -->
+  <!-- Layered wings reminiscent of 3D printing slicing strata -->
+  <path d="M24 4L38 12L38 20L24 12L10 20L10 12L24 4Z" fill="#F36B16" />
+  <path d="M24 14L42 24L42 30L24 20L6 30L6 24L24 14Z" fill="#111111" />
+  <path d="M24 23L40 32L38 37L24 29L10 37L8 32L24 23Z" fill="#F36B16" />
+  <!-- Nozzle point at base -->
+  <polygon points="24,44 19,34 29,34" fill="#111111" />
+  <circle cx="24" cy="44" r="1.5" fill="#F36B16" />
+</svg>

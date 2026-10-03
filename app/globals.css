@@ -1,0 +1,860 @@
+/* ============================================================================
+   Falcon 3D Prints — Global Design System
+   Design source: design.md §11 (typography), §12 (color), §13 (grid/spacing)
+   ============================================================================ */
+
+@import "tailwindcss";
+
+/* ─── Google Fonts import ──────────────────────────────────────────────────── */
+/* Loaded via next/font in layout.tsx — this @import is a fallback reference */
+
+/* ============================================================================
+   DESIGN TOKENS (CSS Custom Properties)
+   ============================================================================ */
+
+:root {
+  /* ── Color palette (design.md §12) ──────────────────────────────────────── */
+  --falcon-orange: #F36B16;      /* Fallback until exact logo hex confirmed     */
+  --ink: #111111;                /* Text, dark blocks, footer                   */
+  --paper: #F5F1E9;              /* Page background                             */
+  --stone: #D8D2C8;              /* Borders, shelf, diagrams                    */
+  --muted: #7E7A73;              /* Metadata                                    */
+  --night: #0B0B0B;              /* Transform scene, Prototype state            */
+
+  /* Derived tones */
+  --orange-ink: #C9500A;         /* Orange text on paper (AA contrast)          */
+  --paper-warm: #F2E6DA;         /* Warm tint (Design state, hero scroll shift) */
+  --paper-cool: #E9E4DA;         /* Cool tint                                   */
+  --stone-light: #DDD6CB;        /* Figurine state background                   */
+
+  /* Semantic aliases */
+  --color-bg: var(--paper);
+  --color-text: var(--ink);
+  --color-accent: var(--falcon-orange);
+  --color-border: var(--stone);
+
+  /* ── Typography scale (design.md §11) ───────────────────────────────────── */
+  /* Display / hero — Space Grotesk 600/700 */
+  --text-display-hero: clamp(4rem, 9vw, 9rem);
+  --text-display-section: clamp(3rem, 6vw, 6rem);
+  --text-display-giant: clamp(22vw, 28vw, 34vw);    /* Background words       */
+  --text-title: clamp(1.75rem, 3vw, 2.5rem);
+  --text-body-l: clamp(1.0625rem, 1.25vw, 1.25rem);
+  --text-body: 1rem;
+
+  /* DM Mono technical labels */
+  --text-mono: clamp(0.6875rem, 0.9vw, 0.8125rem);
+
+  /* Tracking */
+  --tracking-display: -0.03em;
+  --tracking-display-tight: -0.045em;
+  --tracking-mono: 0.08em;
+
+  /* Leading */
+  --leading-giant: 0.92;
+  --leading-title: 1.15;
+  --leading-body: 1.6;
+
+  /* ── Spacing scale (px, design.md §13) ──────────────────────────────────── */
+  --space-1: 0.25rem;   /* 4px  */
+  --space-2: 0.5rem;    /* 8px  */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  --space-24: 6rem;     /* 96px */
+  --space-32: 8rem;     /* 128px */
+  --space-48: 12rem;    /* 192px */
+
+  /* ── Border radius (design.md §13) ──────────────────────────────────────── */
+  --radius-sm: 6px;      /* Tags, inputs                                        */
+  --radius-md: 10px;     /* Buttons                                             */
+  --radius-lg: 16px;     /* Lightbox                                            */
+  --radius-xl: 24px;     /* Large image containers, upload zone ONLY            */
+  /* Many blocks stay square — no default border-radius on cards                */
+
+  /* ── Motion / easing (design.md §16) ────────────────────────────────────── */
+  --ease-default: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out: cubic-bezier(0, 0, 0.36, 1);
+  --duration-fast: 220ms;
+  --duration-standard: 500ms;
+  --duration-editorial: 900ms;
+  --duration-cinematic: 1600ms;
+
+  /* ── Depth / perspective (design.md §13) ────────────────────────────────── */
+  --perspective-scene: 1200px;
+  --z-bg: -300px;       /* Z-0: background layer                               */
+  --z-mid: -120px;      /* Z-1: midground                                      */
+  --z-primary: 0px;     /* Z-2: primary object                                 */
+  --z-fg: 120px;        /* Z-3: foreground                                     */
+
+  /* ── Scene lengths — tunable CSS custom properties ─────────────────────── */
+  --scene-hero: 250vh;
+  --scene-wall: 400vh;
+  --scene-transform: 450vh;
+  --scene-process: 350vh;
+  --scene-cta: 160vh;
+
+  /* ── Grid (design.md §13) ────────────────────────────────────────────────── */
+  --grid-cols: 12;
+  --grid-gutter: 24px;
+  --grid-margin: clamp(1.5rem, 5vw, 6rem);
+  --grid-max: 1440px;
+
+  /* ── Artifact visual constants ────────────────────────────────────────────── */
+  --grid-opacity: 0.05;           /* Print-bed grid opacity                      */
+  --giant-word-opacity: 0.10;    /* Giant words on paper                        */
+  --giant-word-opacity-night: 0.18; /* Giant words on night                    */
+  --falcon-line-width: 1.5px;
+  --shadow-base: 0 2px 4px rgba(17,17,17,0.10), 0 18px 36px -18px rgba(17,17,17,0.35);
+  --shadow-hover: 0 4px 8px rgba(17,17,17,0.12), 0 26px 48px -18px rgba(17,17,17,0.45);
+  --shadow-contact: 0 24px 48px -12px rgba(17,17,17,0.28);
+}
+
+/* ─── Mobile token overrides ──────────────────────────────────────────────── */
+@media (max-width: 767px) {
+  :root {
+    --text-display-hero: clamp(2.625rem, 11vw, 3.625rem);  /* 42–58px          */
+    --text-display-section: clamp(2.375rem, 9vw, 3.125rem); /* 38–50px         */
+    --text-display-giant: clamp(28vw, 32vw, 40vw);
+    --text-title: clamp(1.5rem, 5.5vw, 1.875rem);
+    --grid-margin: 1.25rem;
+    --grid-gutter: 1rem;
+
+    /* Shorter scene lengths on mobile */
+    --scene-hero: 170vh;
+    --scene-wall: 260vh;
+    --scene-transform: 250vh;
+    --scene-process: 220vh;
+    --scene-cta: 120vh;
+  }
+}
+
+/* ============================================================================
+   RESET & BASE
+   ============================================================================ */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-text-size-adjust: 100%;
+  scroll-behavior: auto; /* Lenis handles smooth scroll on desktop */
+}
+
+/* Smooth scroll disabled — Lenis handles this */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
+body {
+  background-color: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-manrope, 'Manrope', system-ui, sans-serif);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ─── Grain overlay (A35) ──────────────────────────────────────────────────── */
+/* Applied as a pseudo-element on body to avoid DOM cost */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image: url('/textures/grain.png');
+  background-size: 200px 200px;
+  opacity: 0.028;
+  z-index: 9999;
+  mix-blend-mode: multiply;
+}
+
+/* ─── Selection ────────────────────────────────────────────────────────────── */
+::selection {
+  background: var(--falcon-orange);
+  color: var(--paper);
+}
+
+/* ─── Focus ────────────────────────────────────────────────────────────────── */
+/* design.md §21: visible 2px ink focus ring (paper/orange on night) */
+:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+  border-radius: var(--radius-sm);
+}
+
+/* On dark backgrounds */
+.scene-night :focus-visible {
+  outline-color: var(--falcon-orange);
+}
+
+/* ─── Skip link (accessibility) ────────────────────────────────────────────── */
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--space-6);
+  z-index: 10000;
+  background: var(--ink);
+  color: var(--paper);
+  padding: var(--space-3) var(--space-6);
+  font-family: var(--font-dm-mono, 'DM Mono', monospace);
+  font-size: var(--text-mono);
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+  text-decoration: none;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
+  transition: top var(--duration-fast) var(--ease-out);
+}
+.skip-link:focus {
+  top: 0;
+}
+
+/* ============================================================================
+   TYPOGRAPHY CLASSES
+   ============================================================================ */
+
+/* Display / Hero — Space Grotesk */
+.text-display-hero {
+  font-family: var(--font-space-grotesk, 'Space Grotesk', sans-serif);
+  font-size: var(--text-display-hero);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-giant);
+}
+
+.text-display-section {
+  font-family: var(--font-space-grotesk, 'Space Grotesk', sans-serif);
+  font-size: var(--text-display-section);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-giant);
+}
+
+/* Giant background words — aria-hidden, low opacity */
+.text-giant {
+  font-family: var(--font-space-grotesk, 'Space Grotesk', sans-serif);
+  font-size: var(--text-display-giant);
+  font-weight: 700;
+  letter-spacing: var(--tracking-display-tight);
+  line-height: var(--leading-giant);
+  color: var(--ink);
+  opacity: var(--giant-word-opacity);
+  user-select: none;
+  pointer-events: none;
+  white-space: nowrap;
+  /* Never compete with the product */
+}
+
+.scene-night .text-giant {
+  color: var(--paper);
+  opacity: var(--giant-word-opacity-night);
+}
+
+.text-title {
+  font-family: var(--font-space-grotesk, 'Space Grotesk', sans-serif);
+  font-size: var(--text-title);
+  font-weight: 600;
+  letter-spacing: var(--tracking-display);
+  line-height: var(--leading-title);
+}
+
+.text-body-l {
+  font-size: var(--text-body-l);
+  line-height: var(--leading-body);
+}
+
+/* Technical metadata — DM Mono */
+.text-mono {
+  font-family: var(--font-dm-mono, 'DM Mono', 'Courier New', monospace);
+  font-size: var(--text-mono);
+  font-weight: 400;
+  letter-spacing: var(--tracking-mono);
+  text-transform: uppercase;
+  line-height: 1.4;
+}
+
+.text-mono-label {
+  font-family: var(--font-dm-mono, 'DM Mono', monospace);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+/* Section numbers (aria-hidden) */
+.scene-label {
+  font-family: var(--font-dm-mono, 'DM Mono', monospace);
+  font-size: 0.6875rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+/* ============================================================================
+   LAYOUT
+   ============================================================================ */
+
+.container {
+  width: 100%;
+  max-width: var(--grid-max);
+  margin-inline: auto;
+  padding-inline: var(--grid-margin);
+}
+
+/* Scene wrapper — full viewport, handles CSS 3D context */
+.scene {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Pinned scene wrapper — height controls scroll length */
+.scene-pinned {
+  position: relative;
+  width: 100%;
+}
+
+/* The actual sticky frame inside a pinned scene */
+.scene-stage {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* ─── CSS 3D composition context ────────────────────────────────────────────── */
+.depth-scene {
+  perspective: var(--perspective-scene);
+  perspective-origin: 50% 45%;
+  transform-style: preserve-3d;
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.depth-layer-0 { transform: translateZ(var(--z-bg)); }
+.depth-layer-1 { transform: translateZ(var(--z-mid)); }
+.depth-layer-2 { transform: translateZ(var(--z-primary)); }
+.depth-layer-3 { transform: translateZ(var(--z-fg)); }
+
+/* ============================================================================
+   PRINT-BED GRID (A04)
+   ============================================================================ */
+
+.print-bed-grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--stone) 1px, transparent 1px),
+    linear-gradient(90deg, var(--stone) 1px, transparent 1px);
+  background-size: 48px 48px;
+  opacity: var(--grid-opacity);
+}
+
+/* Perspective grid for Print Lab and Transform */
+.print-bed-grid-perspective {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(var(--stone) 1px, transparent 1px),
+    linear-gradient(90deg, var(--stone) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: var(--grid-opacity);
+  transform: rotateX(62deg);
+  transform-origin: center bottom;
+}
+
+/* ============================================================================
+   BUTTONS
+   ============================================================================ */
+
+/* Primary CTA — orange fill */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  background-color: var(--falcon-orange);
+  color: var(--paper);
+  font-family: var(--font-manrope, 'Manrope', sans-serif);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0 var(--space-8);
+  height: 52px;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn-primary:hover {
+  background-color: #d95e10; /* Slightly darker on hover */
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+  transition-duration: 120ms;
+}
+
+.btn-primary:focus-visible {
+  outline: 2px solid var(--ink);
+  outline-offset: 3px;
+}
+
+/* Falcon Line underline on hover — drawn by JS */
+.btn-primary::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 1.5px;
+  background: var(--paper);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration-fast) var(--ease-default);
+}
+
+.btn-primary:hover::after {
+  transform: scaleX(1);
+}
+
+/* Secondary CTA — text with arrow */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  color: var(--ink);
+  font-family: var(--font-manrope, 'Manrope', sans-serif);
+  font-size: 0.875rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  cursor: pointer;
+  position: relative;
+  padding: 0;
+  height: 52px;
+}
+
+.btn-secondary::after {
+  content: '';
+  position: absolute;
+  bottom: 12px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--ink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration-fast) var(--ease-default);
+}
+
+.btn-secondary:hover::after {
+  transform: scaleX(1);
+}
+
+/* WhatsApp CTA */
+.btn-whatsapp {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  background-color: transparent;
+  color: var(--ink);
+  font-family: var(--font-manrope, 'Manrope', sans-serif);
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0 var(--space-6);
+  height: 52px;
+  border: 1.5px solid var(--stone);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    border-color var(--duration-fast) var(--ease-out),
+    background-color var(--duration-fast) var(--ease-out);
+}
+
+.btn-whatsapp:hover {
+  border-color: var(--ink);
+  background-color: var(--ink);
+  color: var(--paper);
+}
+
+/* ============================================================================
+   ARTIFACT LABEL / PILL (A15)
+   ============================================================================ */
+
+.artifact-label {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-dm-mono, 'DM Mono', monospace);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  border: 1px solid var(--stone);
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--paper);
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+}
+
+.artifact-label--orange {
+  border-color: var(--falcon-orange);
+  color: var(--orange-ink);
+}
+
+.artifact-label--night {
+  border-color: rgba(245, 241, 233, 0.3);
+  color: rgba(245, 241, 233, 0.7);
+  background: transparent;
+}
+
+/* ============================================================================
+   NAVIGATION
+   ============================================================================ */
+
+.nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  height: 72px;
+  display: flex;
+  align-items: center;
+  transition: height var(--duration-standard) var(--ease-out),
+              background-color var(--duration-standard) var(--ease-out),
+              backdrop-filter var(--duration-standard) var(--ease-out);
+}
+
+.nav--scrolled {
+  height: 56px;
+  background-color: rgba(245, 241, 233, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--stone);
+}
+
+/* Scroll progress hairline — first appearance of Falcon Line */
+.nav-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 1.5px;
+  background: var(--falcon-orange);
+  transform-origin: left;
+  pointer-events: none;
+}
+
+/* ============================================================================
+   SCENE BACKGROUNDS
+   ============================================================================ */
+
+.bg-paper { background-color: var(--paper); }
+.bg-paper-warm { background-color: var(--paper-warm); }
+.bg-paper-cool { background-color: var(--paper-cool); }
+.bg-stone-light { background-color: var(--stone-light); }
+.bg-night { background-color: var(--night); }
+.bg-ink { background-color: var(--ink); }
+
+/* ============================================================================
+   PLACEHOLDER SYSTEM (development visibility)
+   ============================================================================ */
+
+/* Asset required placeholders — visible in development */
+.asset-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--stone-light);
+  border: 1.5px dashed var(--stone);
+  border-radius: 4px;
+  padding: var(--space-4);
+  text-align: center;
+  color: var(--muted);
+  font-family: var(--font-dm-mono, 'DM Mono', monospace);
+  font-size: 0.6875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.5;
+}
+
+/* Hero object placeholder — stone silhouette */
+.hero-object-placeholder {
+  width: 100%;
+  height: 100%;
+  background-color: var(--stone);
+  clip-path: polygon(
+    50% 0%, 80% 10%, 100% 35%, 100% 70%, 80% 90%, 50% 100%, 20% 90%, 0% 70%, 0% 35%, 20% 10%
+  );
+  opacity: 0.4;
+  position: relative;
+}
+
+/* ============================================================================
+   UTILITY CLASSES
+   ============================================================================ */
+
+/* Decorative — hidden from assistive technology */
+.decorative { aria-hidden: true; pointer-events: none; user-select: none; }
+
+/* Visually hidden but accessible */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Will-change helpers — applied during animation only */
+.animating { will-change: transform; }
+.animating-opacity { will-change: opacity; }
+
+/* Scene transition */
+.clip-reveal {
+  clip-path: inset(0 0 100% 0);
+}
+
+/* ============================================================================
+   REDUCED MOTION
+   Design source: design.md §21
+   Disable all heavy animations; preserve final static states.
+   ============================================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Remove all transitions and animations */
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /* Allow short fades (≤250ms) — buttons, focus, small reveals */
+  .btn-primary,
+  .btn-secondary,
+  .btn-whatsapp,
+  .artifact-label,
+  .nav {
+    transition-duration: 200ms !important;
+  }
+
+  /* Remove clip-path animations */
+  .clip-reveal {
+    clip-path: none !important;
+  }
+
+  /* Giant words show immediately at final opacity */
+  .text-giant {
+    opacity: var(--giant-word-opacity) !important;
+  }
+
+  /* Remove grain animation if any */
+  body::after {
+    animation: none !important;
+  }
+
+  /* No parallax on depth layers */
+  .depth-layer-0,
+  .depth-layer-1,
+  .depth-layer-2,
+  .depth-layer-3 {
+    transform: none !important;
+  }
+}
+
+/* ============================================================================
+   MOBILE STICKY BOTTOM BAR
+   design.md §10.1: sticky bottom bar after hero, hidden in CTA scene
+   ============================================================================ */
+
+.mobile-sticky-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 90;
+  display: none;
+  padding: var(--space-4) var(--space-4) calc(var(--space-4) + env(safe-area-inset-bottom));
+  background: rgba(245, 241, 233, 0.95);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--stone);
+  gap: var(--space-3);
+}
+
+@media (max-width: 767px) {
+  .mobile-sticky-bar {
+    display: flex;
+  }
+
+  .mobile-sticky-bar .btn-primary {
+    flex: 1;
+  }
+}
+
+/* ============================================================================
+   LIGHTBOX
+   design.md §14: 16px radius, paper, large image, mono metadata, Esc closes
+   ============================================================================ */
+
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  background: rgba(17, 17, 17, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-6);
+}
+
+.lightbox-panel {
+  background: var(--paper);
+  border-radius: var(--radius-lg);
+  max-width: 900px;
+  width: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* ============================================================================
+   FORM STYLES (Scene F)
+   ============================================================================ */
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.form-label {
+  font-family: var(--font-dm-mono, 'DM Mono', monospace);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.form-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--stone);
+  border-radius: 0;
+  padding: var(--space-3) 0;
+  font-family: var(--font-manrope, 'Manrope', sans-serif);
+  font-size: var(--text-body);
+  color: var(--ink);
+  width: 100%;
+  outline: none;
+  transition: border-color var(--duration-fast) var(--ease-out);
+  -webkit-appearance: none;
+}
+
+.form-input:focus {
+  border-bottom-color: var(--falcon-orange);
+  border-bottom-width: 1.5px;
+}
+
+.form-input::placeholder {
+  color: var(--stone);
+}
+
+.form-error {
+  font-family: var(--font-dm-mono, 'DM Mono', monospace);
+  font-size: 0.6875rem;
+  letter-spacing: 0.05em;
+  color: #C0392B; /* Not falcon orange — errors use standard warning red */
+}
+
+.form-upload {
+  border: 1.5px dashed var(--stone);
+  border-radius: var(--radius-xl); /* 24px — upload zone only */
+  padding: var(--space-8) var(--space-6);
+  text-align: center;
+  cursor: pointer;
+  transition: border-color var(--duration-fast) var(--ease-out),
+              background-color var(--duration-fast) var(--ease-out);
+}
+
+.form-upload:hover {
+  border-color: var(--falcon-orange);
+  background-color: rgba(243, 107, 22, 0.03);
+}
+
+/* ============================================================================
+   MOBILE MENU
+   ============================================================================ */
+
+.mobile-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 150;
+  background: var(--ink);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--space-12) var(--grid-margin);
+}
+
+.mobile-menu-item {
+  font-family: var(--font-space-grotesk, 'Space Grotesk', sans-serif);
+  font-size: clamp(2.75rem, 10vw, 3.5rem);
+  font-weight: 700;
+  color: var(--paper);
+  text-decoration: none;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+  display: block;
+  opacity: 0;
+  transform: translateY(40px);
+  transition:
+    color var(--duration-fast) var(--ease-out),
+    opacity var(--duration-standard) var(--ease-default),
+    transform var(--duration-standard) var(--ease-default);
+}
+
+.mobile-menu-item:hover {
+  color: var(--falcon-orange);
+}
