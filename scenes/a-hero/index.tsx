@@ -265,7 +265,7 @@ export function SceneHero() {
                 height: 'clamp(240px, 48vh, 520px)',
                 position: 'relative',
               }}
-              aria-label="Falcon 3D Prints custom electronics enclosure prototype"
+              aria-label="Falcon 3D Prints ivory FDM-printed toy car under a printer toolhead"
               role="img"
             >
               <div
@@ -278,8 +278,8 @@ export function SceneHero() {
                 }}
               >
                 <Image
-                  src="/assets/falcon/artifacts/hero-object-new.webp?v=3"
-                  alt="Falcon 3D Prints custom mechanical prototype"
+                  src="/assets/falcon/artifacts/hero-printed-car.webp?v=1"
+                  alt="Falcon 3D Prints ivory FDM-printed toy car under a printer toolhead"
                   fill
                   priority
                   unoptimized
@@ -583,12 +583,12 @@ function HeroStaticVariant() {
             height: 'clamp(260px, 45vh, 460px)',
             filter: 'drop-shadow(0 24px 36px rgba(17,17,17,0.18))',
           }}
-          aria-label="Falcon 3D Prints custom mechanical prototype"
+          aria-label="Falcon 3D Prints ivory FDM-printed toy car under a printer toolhead"
           role="img"
         >
           <Image
-            src="/assets/falcon/artifacts/hero-object-new.webp?v=3"
-            alt="Falcon 3D Prints custom mechanical prototype"
+            src="/assets/falcon/artifacts/hero-printed-car.webp?v=1"
+            alt="Falcon 3D Prints ivory FDM-printed toy car under a printer toolhead"
             fill
             priority
             unoptimized
