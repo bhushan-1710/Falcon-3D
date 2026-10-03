@@ -4,6 +4,53 @@
 
 ---
 
+## Phase 3C — R2 + Media Layer (2026-10-03) ✅
+
+### 1. Scope & Implementation
+- **R2 Bucket Binding**: Added `r2_buckets` in `wrangler.jsonc` with binding `MEDIA_BUCKET` mapped to `falcon-media`.
+- **Validation Engine (`lib/media/validation.ts`)**:
+  - Size checks: 15 MB image limit, 250 MB video limit.
+  - Strict MIME allowlist: `image/jpeg`, `image/png`, `image/webp`, `image/avif`.
+  - Magic byte signatures verified: JPEG (`FF D8 FF`), PNG (`89 50 4E 47 0D 0A 1A 0A`), WebP (`RIFF...WEBP`), AVIF (`ftypavif/avis`).
+  - Strict security rejection: Explicit check rejecting SVG uploads (`<svg`, `<?xml`).
+  - Strict mismatch rejection: Verifies declared MIME matches detected magic bytes.
+- **Media Serving Route (`app/api/media/[...key]/route.ts`)**:
+  - Verification: Queries D1 `media` table; non-registered or deleted files immediately return 404.
+  - Conditional requests: Handles `If-None-Match` vs ETag, returning HTTP 304 Not Modified.
+  - Range support: Parses `Range: bytes=start-end`, returning HTTP 206 Partial Content with `Content-Range` and `Accept-Ranges: bytes`.
+  - Security headers: `X-Content-Type-Options: nosniff`, `Cache-Control: public, max-age=31536000, immutable`.
+- **Upload API Routes**:
+  - `app/api/admin/media/upload/route.ts`: Uploads validated image buffers directly into R2 under `media/{id}/{sanitized_filename}` and inserts metadata records into D1 `media`.
+  - `app/api/admin/videos/upload/route.ts`: Chunked multipart video uploads via `MEDIA_BUCKET` binding (`initiate`, `upload_part`, `complete`, `abort`). Inserts into D1 `videos` only upon finalize.
+  - `app/api/admin/videos/route.ts`: Video catalog queries and external video (YouTube/Vimeo) registration.
+- **Delete-with-Warning Usage Engine (`lib/media/usage.ts`)**:
+  - Checks every foreign key column: `categories.image_id`, `projects.featured_image_id`, `projects.og_image_id`, `products.featured_image_id`, `products.og_image_id`, `videos.thumbnail_id`.
+  - Checks join tables: `project_media.media_id`, `product_media.media_id`.
+  - Checks JSON content: Scans `website_content.content_json` blobs for media ID occurrences.
+  - Endpoint `app/api/admin/media/[id]/usage/route.ts` exposes reference details for CMS delete confirmations.
+
+### 2. Verification
+- **Unit Tests**:
+  - `scripts/test_media_validation.ts`: Passed (JPEG, PNG, WebP, AVIF valid; SVG rejected; spoofed text rejected; MIME mismatch rejected; size limit enforced).
+  - `scripts/test_media_usage.ts`: Passed (all 9 FK/join/JSON locations verified with mock D1).
+- **End-to-End API Integration (`verify_3c.js`)**:
+  - SVG upload rejected (HTTP 400).
+  - Spoofed magic bytes rejected (HTTP 400).
+  - Valid PNG uploaded to R2 and inserted into D1 (HTTP 200).
+  - Media served via `/api/media/[...key]` (HTTP 200, Content-Type `image/png`, nosniff, ETag).
+  - Conditional request verified (HTTP 304).
+  - Range request verified (HTTP 206, Content-Range `bytes 0-10/33`, Content-Length 11).
+  - Usage check verified: `inUse: false` initially; `inUse: true` after attaching to project.
+  - Deletion verified: media served route immediately returns 404 after deletion.
+- **Build Checks**:
+  - `next build`: Passed cleanly with all dynamic API routes.
+  - `opennextjs-cloudflare build`: Passed cleanly, worker bundle saved to `.open-next/worker.js`.
+
+### 3. Next Phase
+- **Phase 4**: Auth + Admin Shell (PBKDF2 WebCrypto hashing, session management with SHA-256 tokens in D1, HTTP-only cookies, login rate limiting, CSRF verification, local `scripts/create-admin` CLI, protected admin routes, CMS shell UI with sidebar and dashboard stats).
+
+---
+
 ## Phase 3B — D1 Schema + Data Layer (2026-10-03) ✅
 
 ### 1. Scope & Implementation

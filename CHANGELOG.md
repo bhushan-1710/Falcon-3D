@@ -2,6 +2,30 @@
 
 > **File location**: repo root (`falcon-web/CHANGELOG.md`), not `docs/`.
 
+## [Phase 3C — R2 + Media Layer] — 2026-10-03
+
+### Added & Configured
+- `wrangler.jsonc`: Added `r2_buckets` binding `MEDIA_BUCKET` mapped to `falcon-media`.
+- `lib/media/validation.ts`: Server-side image validation enforcing max file size (15 MB), strict MIME allowlist (JPEG, PNG, WebP, AVIF), magic-byte verification (rejecting mismatched or spoofed files), and strict rejection of SVG files.
+- `lib/media/usage.ts`: Comprehensive delete-with-warning usage scanner checking all foreign key references (`categories.image_id`, `projects.featured_image_id`, `projects.og_image_id`, `project_media.media_id`, `products.featured_image_id`, `products.og_image_id`, `product_media.media_id`, `videos.thumbnail_id`) and searching `website_content.content_json` blobs.
+- `app/api/media/[...key]/route.ts`: Secure media serving route handler. Enforces table existence check (only keys registered in `media` table and not deleted), HTTP 304 conditional request handling via `If-None-Match`/`ETag`, HTTP 206 Partial Content for `Range` requests, and response security headers (`X-Content-Type-Options: nosniff`, `Cache-Control: public, max-age=31536000, immutable`).
+- `app/api/admin/media/upload/route.ts`: Authenticated image upload endpoint storing verified buffers in R2 under `media/{id}/{sanitized_filename}` and recording metadata rows in D1 `media` table.
+- `app/api/admin/media/[id]/usage/route.ts`: API endpoint exposing delete-with-warning reference status for CMS deletion confirmations.
+- `app/api/admin/videos/upload/route.ts` & `app/api/admin/videos/route.ts`: Chunked multipart upload endpoint for R2 videos (`createMultipartUpload`, `uploadPart`, `complete`, `abort`) and external video (YouTube/Vimeo) registration.
+- Automated tests: `scripts/test_media_validation.ts` and `scripts/test_media_usage.ts` covering magic bytes and all 9 FK/JSON reference types.
+
+### Verified (End-to-End Media Layer Test)
+- SVG upload rejection: Returns HTTP 400 with explicit disallow error.
+- Spoofed file rejection: Text file disguised as PNG rejected by magic byte check with HTTP 400.
+- Valid image upload: Successfully uploaded to R2 and inserted into D1 table with HTTP 200.
+- Media serving: Route `/api/media/[...key]` serves file with HTTP 200, correct Content-Type, nosniff, ETag, and immutable cache headers.
+- Conditional ETag request: Returns HTTP 304 Not Modified.
+- Range request: Returns HTTP 206 Partial Content with correct Content-Range and Content-Length.
+- Media usage check: Unattached media reports `inUse: false`; when attached to project, reports `inUse: true` with reference details.
+- Deletion cleanup: Deleting media record immediately causes `/api/media/[...key]` to return HTTP 404.
+- Build checks: `npm run build` and `npm run build:worker` pass cleanly with exit code 0.
+
+
 ## [Phase 3B — D1 Schema + Data Layer] — 2026-10-03
 
 ### Added & Configured
