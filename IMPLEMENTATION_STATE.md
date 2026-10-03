@@ -4,6 +4,36 @@
 
 ---
 
+## Phase 3B — D1 Schema + Data Layer (2026-10-03) ✅
+
+### 1. Scope & Implementation
+- **Cloudflare D1 Binding**: Added `d1_databases` in `wrangler.jsonc` with binding `DB`, database name `falcon-db`, local placeholder ID `00000000-0000-0000-0000-000000000000`, and `migrations_dir: "migrations"`.
+- **Centralized Gateway**: `lib/cloudflare/context.ts` provides `getCloudflareEnv()`, `getDB()`, and `getMediaBucket()` through `@opennextjs/cloudflare`'s `getCloudflareContext()`. Zero external dependencies added; native Worker types defined in `lib/cloudflare/types.ts`.
+- **Migrations**:
+  - `migrations/0001_initial_schema.sql`: Full normalized D1 schema containing `media`, `videos`, `categories`, `projects`, `project_media`, `products`, `product_media`, `website_content`, `navigation_items`, `site_settings`, `users`, `sessions`, `login_attempts`, `activity_log`. Integer epoch timestamps, soft deletion via `deleted_at`, status checks (`DRAFT`, `PUBLISHED`, `ARCHIVED`), and cascaded join foreign keys.
+  - `migrations/0002_seed_initial.sql`: Navigation seed (6 approved links: SERVICES, WORK, PRODUCTS, PROCESS, ABOUT, CONTACT) and website content defaults mirroring live copy. Strictly NO products, NO projects.
+- **Data Access Layer**:
+  - `lib/data/products.ts`: Parameterized queries filtering strictly by `status = 'PUBLISHED' AND deleted_at IS NULL`. Falls back to dev fixtures only when `NODE_ENV === 'development' && USE_PRODUCT_FIXTURES === '1'`. In production or without fixtures enabled, returns empty array with approved empty state.
+  - `lib/data/projects.ts`: Caps at 6 slots, maps published D1 projects into Workshop Wall slots while preserving static geometric depth/rotation/scale presets.
+  - `lib/data/navigation.ts` & `lib/data/content.ts`: Typed accessors with static fallbacks.
+- **Dynamic Routing**:
+  - `app/products/page.tsx` & `app/products/[slug]/page.tsx`: Set `export const dynamic = 'force-dynamic'` and `export const dynamicParams = true` to prevent edge caching of 404s before publish.
+
+### 2. Browser & Local Verification (CDP Driven)
+- Executed `verify_3b.js` using real Chrome over Chrome DevTools Protocol (CDP port 9226):
+  - **Empty DB**: `/products` returned `hasEmptyState: true` (`00 / NO PRODUCTS CURRENTLY RELEASED`), `productCards: 0`.
+  - **Published Product Insert**: SQL inserted `test-d1-housing` with status `PUBLISHED`. Verified on `/products` (`hasTestProduct: true`, `productCards: 1`) and on `/products/test-d1-housing` (HTTP 200, title rendered, price rendered).
+  - **Draft Suppression**: Updated status to `DRAFT`. Verified hidden on `/products` (`hasTestProduct: false`, `hasEmptyState: true`), and `/products/test-d1-housing` returned 404 (`is404: true`).
+  - **Clean Cleanup**: Deleted test product via SQL; count returned to 0 cleanly.
+- Build checks:
+  - `next build`: Passed cleanly (`ƒ /products` and `ƒ /products/[slug]` dynamically server-rendered).
+  - `opennextjs-cloudflare build`: Passed cleanly, worker saved to `.open-next/worker.js`.
+
+### 3. Next Phase
+- **Phase 3C**: R2 + Media Layer (local R2 emulation, upload endpoints, magic-byte validation, media serving route with Range/ETag headers, delete-with-warning check).
+
+---
+
 ## Phase 2c — Mobile Header Overflow Fix (2026-10-03) ✅
 
 ### Root Cause (CDP measured)

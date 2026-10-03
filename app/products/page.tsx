@@ -22,6 +22,8 @@ import { getPublishedProducts, getProductCategories, buildProductWhatsAppUrl } f
 import { productsPage, brand } from '@/lib/content'
 import type { Product } from '@/lib/types/products'
 
+export const dynamic = 'force-dynamic'
+
 // ─── Product card ────────────────────────────────────────────────────────────
 
 function ProductCard({ product }: { product: Product }) {

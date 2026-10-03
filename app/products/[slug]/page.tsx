@@ -19,12 +19,8 @@ import { getPublishedProductBySlug, getPublishedProducts, buildProductWhatsAppUr
 import { brand } from '@/lib/content'
 import type { Product } from '@/lib/types/products'
 
-// ─── Static params (pre-render all published slugs) ──────────────────────────
-
-export async function generateStaticParams() {
-  const products = await getPublishedProducts()
-  return products.map((p) => ({ slug: p.slug }))
-}
+export const dynamic = 'force-dynamic'
+export const dynamicParams = true
 
 // ─── Per-product metadata ────────────────────────────────────────────────────
 

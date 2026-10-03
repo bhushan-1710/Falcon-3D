@@ -2,6 +2,28 @@
 
 > **File location**: repo root (`falcon-web/CHANGELOG.md`), not `docs/`.
 
+## [Phase 3B — D1 Schema + Data Layer] — 2026-10-03
+
+### Added & Configured
+- `wrangler.jsonc`: Added D1 database binding `DB` (`database_name: "falcon-db"`, local placeholder ID `00000000-0000-0000-0000-000000000000`, `migrations_dir: "migrations"`).
+- `migrations/0001_initial_schema.sql`: Full D1 relational schema with 13 tables: `media`, `videos`, `categories`, `projects`, `project_media`, `products`, `product_media`, `website_content`, `navigation_items`, `site_settings`, `users`, `sessions`, `login_attempts`, `activity_log`. Integer epoch timestamps, soft deletion via `deleted_at`, status checks (`DRAFT`, `PUBLISHED`, `ARCHIVED`), cascaded join foreign keys, and indexes on slug, status, category, timestamps.
+- `migrations/0002_seed_initial.sql`: Initial seed for navigation items (6 approved links: SERVICES, WORK, PRODUCTS, PROCESS, ABOUT, CONTACT) and website content defaults matching live copy. Strictly NO products, NO projects.
+- `lib/cloudflare/types.ts`: Zero-dependency native TypeScript definitions for `D1Database`, `D1PreparedStatement`, `D1Result`, `R2Bucket`, and global `CloudflareEnv`.
+- `lib/cloudflare/context.ts`: Centralized Cloudflare access gateway via `getCloudflareContext()` with graceful error and SSR fallback.
+- `lib/data/products.ts`: Typed data access layer querying D1 for published products (`status = 'PUBLISHED' AND deleted_at IS NULL`) with parameterized queries. Falls back to fixtures only when `areFixturesEnabled()` is true (NODE_ENV=development and USE_PRODUCT_FIXTURES=1), otherwise empty array.
+- `lib/data/projects.ts`: Workshop wall data access layer capping at 6 slots and merging CMS published projects with static wall layout presets.
+- `lib/data/navigation.ts` & `lib/data/content.ts`: Typed data access layer for dynamic navigation and website content.
+- Dynamic route exports: `export const dynamic = 'force-dynamic'` added to `app/products/page.tsx` and `app/products/[slug]/page.tsx` to prevent static edge 404 caching.
+
+### Verified (Real Chrome CDP + Wrangler D1 Local)
+- Local D1 migrations applied successfully (53 schema commands, 3 seed commands).
+- Empty DB verification: `/products` renders approved empty catalog state (`00 / NO PRODUCTS CURRENTLY RELEASED`).
+- Published insert verification: inserting a test product into D1 via SQL immediately renders it on `/products` (product card count 1) and `/products/test-d1-housing` (status 200, heading and price rendered).
+- Draft suppression verification: updating status to `DRAFT` immediately hides the product from `/products` and `/products/test-d1-housing` returns 404.
+- Clean cleanup: test product deleted via SQL; D1 count returns to 0 cleanly.
+- `npm run build` and `npm run build:worker` pass cleanly with exit code 0.
+
+
 ## [Phase 2c — Mobile Header Overflow Fix] — 2026-10-03
 
 ### Root Cause (measured via CDP at 375 px)
