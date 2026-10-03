@@ -2,6 +2,28 @@
 
 > **File location**: repo root (`falcon-web/CHANGELOG.md`), not `docs/`.
 
+## [Phase 6 — Public Integration + SEO] — 2026-10-03
+
+### Added & Configured
+- **Dynamic Navigation Integration (`components/Navigation/index.tsx`, `app/api/navigation/route.ts`)**:
+  - Connected header navigation to `/api/navigation` backed by `getNavItems()` in D1.
+  - Retained 100% of approved desktop and mobile menu visuals, animations, active scene dot, and orange underline.
+  - Zero hydration mismatch: instant fallback to canonical navigation links with background sync.
+- **Workshop Wall Dynamic Projects (`scenes/c-workshop-wall/index.tsx`, `app/api/projects/wall/route.ts`)**:
+  - Wired Workshop Wall scene to `/api/projects/wall` backed by `getWallProjects()`.
+  - Wall preserves the 6 fixed 3D spatial slots and choreography (depth, rotation, perspective, hover states) while rendering published D1 projects.
+  - Automatically backfills unfilled slots using original demonstrator projects.
+- **SEO & Open Graph Metadata (`app/products/page.tsx`, `app/products/[slug]/page.tsx`)**:
+  - Added full `Metadata` export to `/products` with Title, Description, and OpenGraph tags.
+  - Retained per-product dynamic `generateMetadata` on `/products/[slug]`.
+- **Public Site Regression Check**:
+  - Hero printer nacelle and car canvas animation, Print Lab, Digital → Physical, Process, and Lenis smooth scrolling verified untouched.
+
+### Verified
+- TypeScript compilation: zero errors (`npx tsc --noEmit`).
+- Route verification: `/api/navigation`, `/api/projects/wall`, `/products`, and `/` all returning HTTP 200.
+
+
 ## [Phase 5 — CMS Screens] — 2026-10-03
 
 ### Added & Configured

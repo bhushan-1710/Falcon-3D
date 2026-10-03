@@ -18,16 +18,29 @@ import Image from 'next/image'
 import { usePathname, useRouter } from 'next/navigation'
 import { nav, brand } from '@/lib/content'
 
+export interface NavLinkItem {
+  label: string
+  href: string
+  openNewTab?: boolean
+  isExternal?: boolean
+}
+
 interface NavProps {
   /** Currently active scene ID */
   activeScene?: string
   /** Currently active route */
   activeRoute?: string
+  /** Optional pre-fetched navigation links */
+  items?: NavLinkItem[]
 }
 
 const SCENES = ['hero', 'lab', 'wall', 'transform', 'process', 'about', 'samples', 'contact']
 
-export function Navigation({ activeScene = 'hero', activeRoute }: NavProps) {
+export function Navigation({ activeScene = 'hero', activeRoute, items }: NavProps) {
+  const [navLinks, setNavLinks] = useState<NavLinkItem[]>(() => {
+    if (items && items.length > 0) return items
+    return nav.links.map(l => ({ label: l.label, href: l.href }))
+  })
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
   const [scrollProgress, setScrollProgress] = useState(0)
@@ -35,6 +48,29 @@ export function Navigation({ activeScene = 'hero', activeRoute }: NavProps) {
   const openButtonRef = useRef<HTMLButtonElement>(null)
   const pathname = usePathname()
   const router = useRouter()
+
+  useEffect(() => {
+    if (items && items.length > 0) {
+      setNavLinks(items)
+      return
+    }
+    // Fetch dynamic navigation on mount
+    fetch('/api/navigation')
+      .then(res => res.json())
+      .then(data => {
+        if (data.items && Array.isArray(data.items) && data.items.length > 0) {
+          setNavLinks(data.items.map((i: any) => ({
+            label: i.label,
+            href: i.url,
+            openNewTab: Boolean(i.openNewTab),
+            isExternal: Boolean(i.isExternal),
+          })))
+        }
+      })
+      .catch(() => {
+        // Fallback already initialized to nav.links
+      })
+  }, [items])
 
   const { scrollYProgress } = useScroll()
 
@@ -157,7 +193,7 @@ export function Navigation({ activeScene = 'hero', activeRoute }: NavProps) {
             style={{ display: 'flex', alignItems: 'center', gap: 40 }}
             className="desktop-nav"
           >
-            {nav.links.map((link) => {
+            {navLinks.map((link) => {
               // Route links: active when pathname matches
               // Anchor links: active when scene is visible
               const isRoute = link.href.startsWith('/')
@@ -171,7 +207,7 @@ export function Navigation({ activeScene = 'hero', activeRoute }: NavProps) {
                   : '/' + link.href
               return (
                 <NavLink
-                  key={link.href}
+                  key={link.href + link.label}
                   href={resolvedHref}
                   active={isActive}
                   onClick={(e) => handleNavClick(link.href, e)}
@@ -269,7 +305,7 @@ export function Navigation({ activeScene = 'hero', activeRoute }: NavProps) {
 
             {/* Nav items */}
             <nav aria-label="Mobile navigation">
-              {nav.links.map((link, i) => {
+              {navLinks.map((link, i) => {
                 const isRoute = link.href.startsWith('/')
                 const resolvedHref = isRoute
                   ? link.href
@@ -278,7 +314,7 @@ export function Navigation({ activeScene = 'hero', activeRoute }: NavProps) {
                     : '/' + link.href
                 return (
                   <motion.div
-                    key={link.href}
+                    key={link.href + link.label}
                     initial={{ opacity: 0, y: 40 }}
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 20 }}

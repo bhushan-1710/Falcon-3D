@@ -4,6 +4,30 @@
 
 ---
 
+## Phase 6 — Public Integration + SEO (2026-10-03) ✅
+
+### 1. Scope & Implementation
+- **Dynamic Navigation Integration (`components/Navigation/index.tsx`, `app/api/navigation/route.ts`)**:
+  - Connected public header navigation to D1 data layer via `/api/navigation` and `getNavItems()`.
+  - Zero layout shift: initial client state initialized from canonical fallback links with dynamic re-hydration.
+  - Complete preservation of header visual design, active scene tracking, scroll progress hairline, and mobile fullscreen menu.
+- **Workshop Wall Dynamic Projects (`scenes/c-workshop-wall/index.tsx`, `app/api/projects/wall/route.ts`)**:
+  - Wired 3D Workshop Wall to `/api/projects/wall` via `getWallProjects()`.
+  - Up to 6 published D1 projects map directly onto the 6 spatial card slots, maintaining precise perspective, depth, and rotation choreography.
+  - Any empty slots gracefully filled by demonstrator projects.
+- **SEO & Open Graph Metadata**:
+  - Static metadata export added to `/products` with Title, Description, and OpenGraph parameters.
+  - Per-product dynamic `generateMetadata` active on `/products/[slug]`.
+
+### 2. Verification
+- TypeScript check (`npx tsc --noEmit`): Exit code 0, zero errors.
+- Public routes test: `/api/navigation`, `/api/projects/wall`, `/products`, and `/` verified returning HTTP 200.
+
+### 3. Next Phase
+- **Phase 7**: QA, Security Verification, Documentation, and Deploy Preparation.
+
+---
+
 ## Phase 5 — CMS Screens (2026-10-03) ✅
 
 ### 1. Scope & Implementation

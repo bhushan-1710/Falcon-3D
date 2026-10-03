@@ -20,9 +20,21 @@ import { Navigation } from '@/components/Navigation'
 import { Footer } from '@/components/Footer'
 import { getPublishedProducts, getProductCategories, buildProductWhatsAppUrl } from '@/lib/data/products'
 import { productsPage, brand } from '@/lib/content'
+import type { Metadata } from 'next'
 import type { Product } from '@/lib/types/products'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Fabrication Catalog — Falcon 3D Prints',
+  description: 'Engineered objects, bespoke components, and precision additive manufacturing from Falcon 3D Prints.',
+  openGraph: {
+    title: 'Fabrication Catalog — Falcon 3D Prints',
+    description: 'Engineered objects, bespoke components, and precision additive manufacturing from Falcon 3D Prints.',
+    type: 'website',
+    locale: 'en_IN',
+  },
+}
 
 // ─── Product card ────────────────────────────────────────────────────────────
 

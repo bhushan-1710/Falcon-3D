@@ -20,19 +20,38 @@
 
 'use client'
 
-import { useRef, useState, useCallback } from 'react'
+import { useRef, useState, useCallback, useEffect } from 'react'
 import { motion, useScroll, useTransform, useReducedMotion, AnimatePresence } from 'framer-motion'
 import { ArtifactCard } from '@/components/ArtifactCard'
 import { ArtifactLabel } from '@/components/ArtifactLabel'
 import { FalconLine } from '@/components/FalconLine'
 import { workshopWall } from '@/lib/content'
-import { projects } from '@/lib/projects'
+import { projects as fallbackProjects, type Project } from '@/lib/projects'
 
-export function SceneWorkshopWall() {
+export function SceneWorkshopWall({ initialProjects }: { initialProjects?: Project[] } = {}) {
   const prefersReducedMotion = useReducedMotion()
   const containerRef = useRef<HTMLDivElement>(null)
+  const [wallProjects, setWallProjects] = useState<Project[]>(() => {
+    if (initialProjects && initialProjects.length > 0) return initialProjects
+    return fallbackProjects
+  })
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
   const [hasInteracted, setHasInteracted] = useState(false)
+
+  useEffect(() => {
+    if (initialProjects && initialProjects.length > 0) {
+      setWallProjects(initialProjects)
+      return
+    }
+    fetch('/api/projects/wall')
+      .then(res => res.json())
+      .then(data => {
+        if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
+          setWallProjects(data.projects)
+        }
+      })
+      .catch(() => {})
+  }, [initialProjects])
 
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -44,7 +63,7 @@ export function SceneWorkshopWall() {
   const worldRotateY = useTransform(scrollYProgress, [0, 0.3, 1], [6, 0, -6])
 
   // Active card driven by scroll if no manual selection
-  const scrollIndex = useTransform(scrollYProgress, [0, 1], [0, projects.length - 1])
+  const scrollIndex = useTransform(scrollYProgress, [0, 1], [0, wallProjects.length - 1])
 
   const handleCardClick = useCallback((index: number) => {
     setActiveIndex(index === activeIndex ? null : index)
@@ -144,7 +163,7 @@ export function SceneWorkshopWall() {
               perspective: 1200,
             }}
           >
-            {projects.map((project, i) => {
+            {wallProjects.map((project, i) => {
               const isActive = activeIndex === i
               const isOther = activeIndex !== null && !isActive
 
@@ -207,7 +226,7 @@ export function SceneWorkshopWall() {
 
         {/* ── Featured metadata (A23) ──────────────────────────────── */}
         <AnimatePresence>
-          {activeIndex !== null && (
+          {activeIndex !== null && wallProjects[activeIndex] && (
             <motion.div
               style={{
                 position: 'absolute',
@@ -223,7 +242,7 @@ export function SceneWorkshopWall() {
               transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             >
               <div className="scene-label" style={{ marginBottom: 8 }}>
-                {projects[activeIndex].sectionLabel}
+                {wallProjects[activeIndex].sectionLabel}
               </div>
               <h3 style={{
                 fontFamily: 'var(--font-space-grotesk, "Space Grotesk", sans-serif)',
@@ -233,10 +252,10 @@ export function SceneWorkshopWall() {
                 marginBottom: 12,
                 letterSpacing: '-0.02em',
               }}>
-                {projects[activeIndex].name}
+                {wallProjects[activeIndex].name}
               </h3>
               <p style={{ color: 'var(--muted)', fontSize: 'var(--text-body)', lineHeight: 1.6 }}>
-                {projects[activeIndex].description}
+                {wallProjects[activeIndex].description}
               </p>
 
               {/* VIEW label */}
