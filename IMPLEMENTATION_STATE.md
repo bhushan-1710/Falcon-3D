@@ -36,6 +36,22 @@
   - `npm run check-secrets`: Passed 0 leaks.
   - `npm run build`: Exited 0 with Turbopack.
 
+### 2. Pre-Deployment Security & Vercel Cleanup (2026-10-04)
+- **Credential Sanitization**:
+  - Deleted `scripts/seed-local-admin.ts` which contained hardcoded credentials. Old password string treated as burned.
+  - Hardened `scripts/create-admin.ts`: Now strictly prompts for email and hidden/masked password interactively (with confirmation). Rejects CLI arguments for passwords, never logs passwords, and connects to any configured `DATABASE_URL` / `DATABASE_AUTH_TOKEN`.
+- **Secret Architecture Audit**:
+  - `ADMIN_SETUP_SECRET`: Confirmed no HTTP route exists to create admins or reset passwords. Admins can only be created via the local interactive CLI script. Variable removed from `.env.example`.
+  - `SESSION_SECRET`: Sessions use database-stored 256-bit random tokens hashed with SHA-256 in the `sessions` table. No cookie-signing secret is needed or used. Variable removed from `.env.example`.
+- **Vercel Configuration & Region**:
+  - Added `"regions": ["bom1"]` to `vercel.json` alongside `"crons"` schedule to place serverless functions in Mumbai, in close proximity to the Turso database.
+- **Cloudflare / OpenNext Decoupling**:
+  - Removed `initOpenNextCloudflareForDev()` from `next.config.ts`.
+  - Archived `wrangler.jsonc` and `open-next.config.ts` to `archive/cloudflare/` out of the default root directory.
+- **Git & Environment Sanitization**:
+  - Confirmed `.env*`, `local.db*`, and `.storage/` are strictly git-ignored.
+  - Verified `npm run build` succeeds cleanly with 0 errors.
+
 ---
 
 ## Multi-Device & Responsive Optimization (2026-10-03) ✅

@@ -13,16 +13,16 @@ The Falcon CMS is an administrative control center for managing studio catalog p
 ## 1. Authentication & Security
 
 - **Algorithm**: WebCrypto PBKDF2 with SHA-512, 100,000 iterations, 32-byte unique salt.
-- **Sessions**: Random 32-byte cryptographic token stored as a SHA-256 hash in D1 `sessions`.
+- **Sessions**: Random 32-byte cryptographic token stored as a SHA-256 hash in Turso `sessions` table. No hardcoded or environment session secrets required.
 - **Cookies**:
   - `__Host-session` in production HTTPS environments (`httpOnly: true`, `sameSite: 'strict'`, `path: '/'`, `maxAge: 7 days`).
   - Fallback to `session` on HTTP localhost.
 - **CSRF Protection**: Mutating HTTP requests (`POST`, `PUT`, `DELETE`, `PATCH`) validate the client `Origin` against the host.
 - **Rate Limiting**: Monitored via `login_attempts` table. Enforces max 5 failed attempts per 15-minute rolling window per email hash.
-- **Admin Creation CLI**:
+- **Admin Creation (Local Interactive CLI Only)**:
+  - Administrators are **strictly created only via the interactive command-line script**. There is no HTTP endpoint capable of provisioning admins or resetting credentials.
+  - The script prompts interactively for email and hidden password (with confirmation), never accepts passwords via CLI arguments, and never outputs or writes passwords to disk:
   ```bash
-  npm run create-admin
-  # or
   npx tsx scripts/create-admin.ts
   ```
 
@@ -50,11 +50,11 @@ The Falcon CMS is an administrative control center for managing studio catalog p
 
 ### Media Library (`/admin/media`)
 - Grid layout with MIME type filtering and real-time previews.
-- Direct-to-R2 file upload with client & server-side magic byte inspection.
+- Direct-to-Supabase Storage file upload with client & server-side magic byte inspection.
 - **Delete-with-warning modal**: Automatically scans all 9 foreign key references and JSON content fields across the database before allowing asset removal.
 
 ### Videos (`/admin/videos`)
-- Supports external video embed URLs (YouTube, Vimeo) and direct R2 multipart uploads for hero/demo reels.
+- Supports external video embed URLs (YouTube, Vimeo) and direct Supabase signed uploads (up to 50 MB) for video demonstrations.
 
 ### Website Content (`/admin/content`)
 - Section-by-section live copy editor for:
@@ -71,6 +71,6 @@ The Falcon CMS is an administrative control center for managing studio catalog p
 - "Reset Defaults" restores canonical studio menu architecture.
 
 ### Settings & System Diagnostics (`/admin/settings`)
-- Live status indicators for Cloudflare D1 and R2 bindings.
+- Live status indicators for Turso database and Supabase Storage connectivity.
 - Studio profile configuration (brand name, contact email, WhatsApp phone, currency).
 - Audit log viewer displaying recent administrative mutations and timestamps.

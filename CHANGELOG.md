@@ -25,9 +25,13 @@
 - **Automated Keep-Alive Cron**:
   - Created protected `/api/cron/keepalive` checking `Authorization: Bearer <CRON_SECRET>` header.
   - Added cron definition in `vercel.json` (`0 0 */3 * *`) running every 3 days to ping Turso and Supabase Storage.
-- **Verification**:
-  - CDP automated test suite verified: login, spoofed file rejection, valid image upload, video direct signed upload, product media attachment, public product rendering, delete-with-warning usage scanner, confirmed deletion, and keep-alive ping.
-  - Production build (`npm run build`) succeeded with 0 errors.
+- **Pre-Deployment Security & Vercel Cleanup**:
+  - Deleted `scripts/seed-local-admin.ts`; burned old test password.
+  - Hardened `scripts/create-admin.ts` to strictly prompt interactively for email and hidden password (with confirmation), rejecting command-line arguments and never logging plain passwords.
+  - Audited secret requirements: Removed unused `ADMIN_SETUP_SECRET` and `SESSION_SECRET` from `.env.example`.
+  - Added `"regions": ["bom1"]` (Mumbai) to `vercel.json` alongside scheduled keep-alive cron.
+  - Cleaned `next.config.ts` of OpenNext dev initialization, and moved `wrangler.jsonc` and `open-next.config.ts` into `archive/cloudflare/`.
+  - Verified `.env*`, `local.db*`, and `.storage/` remain strictly git-ignored.
 
 ## [Multi-Device & Responsive Optimization] — 2026-10-03
 
